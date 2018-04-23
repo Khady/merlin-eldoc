@@ -1,5 +1,27 @@
 (require 'merlin)
 
+;; imported from evil-matchit
+(defun merlin--hl-current-font-among-fonts-p (pos fonts)
+  "If current font at POS is among FONTS."
+  (let* ((fontfaces (get-text-property pos 'face)))
+    (when (not (listp fontfaces))
+      (setf fontfaces (list fontfaces)))
+    (delq nil
+          (mapcar (lambda (f)
+                    (member f fonts))
+                  fontfaces))))
+
+(defun merlin--hl-in-comment-p (pos)
+  "Check character at POS is comment by comparing font face."
+  (merlin--hl-current-font-among-fonts-p pos '(font-lock-comment-face
+                                               font-lock-comment-delimiter-face)))
+
+
+(defun merlin--hl-in-string-or-doc-p (pos)
+  "Check character at POS is string or document by comparing font face."
+  (merlin--hl-current-font-among-fonts-p pos '(font-lock-string-face
+                                               font-lock-doc-face)))
+
 (defcustom merlin-hl-identifier-idle-time 0.50
   "How long to wait after user input before highlighting the current identifier."
   :type 'float
@@ -24,16 +46,28 @@
               (if (merlin--is-short (merlin--type-enclosing-text data))
                   (merlin--type-display (cdr data) (merlin--type-enclosing-text data))
                 (message "type is too long, check buffer `*merlin-types*' or query the type manually"))))
-        (merlin--type-enclosing-after))))
-  )
+        (merlin--type-enclosing-after)))))
+
+(defun merlin--hl-is-keyword-p (pos)
+  "Check if character at POS is keyword by comparing font face."
+  (merlin--hl-current-font-among-fonts-p pos '(tuareg-font-lock-governing-face
+                                               font-lock-keyword-face)))
+
+(defun merlin--hl-valid-position-p (pos)
+  "Check if POS is in a place valid to get a type"
+  (and (not (merlin--hl-in-comment-p pos))
+       (or (not (merlin--hl-is-keyword-p pos)) (merlin--hl-in-string-or-doc-p pos))))
 
 (defun merlin--hl-identifiers-function ()
   "Function run after an idle timeout, highlighting the
 identifier at point, if necessary."
   (when merlin-hl-identifier-mode
-    (merlin--hl-type)
-    (unless (eq merlin--current-hl-identifier-idle-time merlin-hl-identifier-idle-time)
-      (merlin--hl-set-timer))))
+    (let ((bounds (bounds-of-thing-at-point 'word))
+          (word (thing-at-point 'word)))
+      (unless (or (not word) (not (merlin--hl-valid-position-p (point))))
+        (merlin--hl-type)
+        (unless (eq merlin--current-hl-identifier-idle-time merlin-hl-identifier-idle-time)
+          (merlin--hl-set-timer))))))
 
 (defun merlin--hl-set-timer ()
   (if merlin--hl-identifier-timer
