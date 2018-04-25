@@ -1,0 +1,77 @@
+#+TITLE: Merlin auto highlight mode
+
+This package is a minor mode for Emacs. Its goal is to automatically
+display the type, documentation and occurrences of the value under the
+point in OCaml or ReasonML files. The information are obtained from
+merlin.
+
+* Installation
+
+For now the package is not published on melpa and can't be installed
+with quelpa.
+
+** With ~use-package~
+
+1. Clone this repository in ~$HOME/.emacs.d/bootleg~
+
+   #+BEGIN_SRC bash
+mkdir -p "$HOME/.emacs.d/bootleg"
+cd "$HOME/.emacs.d/bootleg"
+git clone https://github.com/Khady/merlin-auto-hl.git
+   #+END_SRC
+
+2. Add this code to ~init.el~
+
+   #+BEGIN_SRC emacs-lisp
+(use-package merlin-auto-hl
+  :load-path "~/.emacs.d/bootleg/merlin-auto-hl/"
+  :hook ((reason-mode tuareg-mode caml-mode) . merlin-hl-identifier-mode))
+   #+END_SRC
+
+** The more manual way
+
+1. Clone this repository in ~$HOME/.emacs.d/bootleg~
+
+   #+BEGIN_SRC bash
+mkdir -p "$HOME/.emacs.d/bootleg"
+cd "$HOME/.emacs.d/bootleg"
+git clone https://github.com/Khady/merlin-auto-hl.git
+   #+END_SRC
+
+2. Add this code to ~init.el~
+
+   #+BEGIN_SRC emacs-lisp
+;; Add the folder containing this package to the load-path
+(add-to-list 'load-path "~/.emacs.d/bootleg/merlin-auto-hl/")
+;; Require the package
+(require 'merlin-auto-hl)
+;; Add a hook to start the mode automatically for OCaml and Reason
+(add-hook 'tuareg-mode-hook 'merlin-hl-identifier-mode)
+(add-hook 'reason-mode-hook 'merlin-hl-identifier-mode)
+   #+END_SRC
+
+* Usage
+
+If a hook has been configured, then there is nothing to do. The mode
+should be launched automatically when an OCaml file is visited.
+
+Otherwise, it can be launched by executing ~M-x merlin-hl-identifier-mode~.
+
+Once this is done, as soon as the point is on a word which is not a
+keyword, a type should be displayed in the message box when the cursor
+doesn't move for more than 0.5 seconds.
+
+* Demo
+
+#+ATTR_HTML: title="demo video"
+[[https://d.khady.info/merlin-auto-hl.ogv][file:merlin-auto-hl.gif]]
+
+Note that merlin is never called explicitly in this video.
+
+* Inspiration
+
+- https://github.com/ocaml/merlin/issues/796
+- https://github.com/ananthakumaran/tide/blob/master/tide.el#L1991-L2096
+- https://github.com/ocaml/merlin/issues/500
+- https://github.com/infinity0/l33tutils/blob/master/devel/emacs/site-lisp/merlin-extra.el
+- https://github.com/fsharp/emacs-fsharp-mode/blob/master/fsharp-doc.el
