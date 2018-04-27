@@ -62,9 +62,8 @@
   "Function run after an idle timeout, highlighting the
 identifier at point, if necessary."
   (when merlin-hl-identifier-mode
-    (let ((bounds (bounds-of-thing-at-point 'word))
-          (word (thing-at-point 'word)))
-      (unless (or (not word) (not (merlin--hl-valid-position-p (point))))
+    (let ((symbol (thing-at-point 'symbol)))
+      (unless (or (not symbol) (not (merlin--hl-valid-position-p (point))))
         (merlin--hl-type)
         (unless (eq merlin--current-hl-identifier-idle-time merlin-hl-identifier-idle-time)
           (merlin--hl-set-timer))))))
