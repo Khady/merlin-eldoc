@@ -25,7 +25,7 @@ git clone https://github.com/Khady/merlin-auto-hl.git
    #+BEGIN_SRC emacs-lisp
 (use-package merlin-auto-hl
   :load-path "~/.emacs.d/bootleg/merlin-auto-hl/"
-  :hook ((reason-mode tuareg-mode caml-mode) . merlin-hl-identifier-mode))
+  :hook ((reason-mode tuareg-mode caml-mode) . merlin-auto-hl-mode))
    #+END_SRC
 
 ** The more manual way
@@ -46,8 +46,8 @@ git clone https://github.com/Khady/merlin-auto-hl.git
 ;; Require the package
 (require 'merlin-auto-hl)
 ;; Add a hook to start the mode automatically for OCaml and Reason
-(add-hook 'tuareg-mode-hook 'merlin-hl-identifier-mode)
-(add-hook 'reason-mode-hook 'merlin-hl-identifier-mode)
+(add-hook 'tuareg-mode-hook 'merlin-auto-hl-mode)
+(add-hook 'reason-mode-hook 'merlin-auto-hl-mode)
    #+END_SRC
 
 * Usage
@@ -55,7 +55,7 @@ git clone https://github.com/Khady/merlin-auto-hl.git
 If a hook has been configured, then there is nothing to do. The mode
 should be launched automatically when an OCaml file is visited.
 
-Otherwise, it can be launched by executing ~M-x merlin-hl-identifier-mode~.
+Otherwise, it can be launched by executing ~M-x merlin-auto-hl-mode~.
 
 Once this is done, as soon as the point is on a word which is not a
 keyword, a type should be displayed in the message box when the cursor
