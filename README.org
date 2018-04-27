@@ -7,8 +7,15 @@ merlin.
 
 * Installation
 
-For now the package is not published on melpa and can't be installed
-with quelpa.
+For now the package is not published on melpa.
+
+** Quelpa
+
+With quelpa already installed and configured:
+
+#+BEGIN_SRC emacs-lisp
+(quelpa '(merlin-auto-hl :repo "Khady/merlin-auto-hl" :fetcher github))
+#+END_SRC
 
 ** With ~use-package~
 
