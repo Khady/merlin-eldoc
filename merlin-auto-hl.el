@@ -24,7 +24,7 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; merlin-auto-hl is a wrapper of the Emacs merlin mode. It enables
+;; merlin-auto-hl is a wrapper of the Emacs merlin mode.  It enables
 ;; automatic display of information available in merlin for OCaml
 ;; code.
 
@@ -79,16 +79,15 @@
                                                     font-lock-keyword-face)))
 
 (defun merlin-auto-hl--valid-position-p (pos)
-  "Check if POS is in a place valid to get a type"
+  "Check if POS is in a place valid to get a type."
   (and (not (merlin-auto-hl--in-comment-p pos))
        (or (not (merlin-auto-hl--is-keyword-p pos)) (merlin-auto-hl--in-string-or-doc-p pos))))
 
 ;;; Main logic
 
 (defun merlin-auto-hl--type ()
-  (interactive)
-  ;; reset verbosity to not display deeper types
-  (setq merlin--verbosity-cache nil)
+  "Gather information about the symbol at point and display them."
+  (setq merlin--verbosity-cache nil) ; reset verbosity to not display deeper types
   (if (region-active-p)
       (merlin--type-region)
     (merlin--type-enclosing-query)
@@ -101,8 +100,7 @@
       (merlin--type-enclosing-after))))
 
 (defun merlin-auto-hl--identifiers-function ()
-  "Function run after an idle timeout, highlighting the
-identifier at point, if necessary."
+  "Function run after an idle timeout, highlighting the identifier at point, if necessary."
   (when (and merlin-auto-hl-mode                    ; current buffer has the mode on
              (not (string-match "*" (buffer-name))) ; avoid buffers like `*merlin-types*'
              (not (minibufferp)))
@@ -117,10 +115,13 @@ identifier at point, if necessary."
           (merlin-auto-hl--set-timer))))))
 
 (defun merlin-auto-hl--cancel-timer ()
-  (if merlin-auto-hl--identifier-timer
-      (cancel-timer merlin-auto-hl--identifier-timer)))
+  "Cancel timer for the current buffer."
+  (unless (not merlin-auto-hl--identifier-timer)
+    (cancel-timer merlin-auto-hl--identifier-timer)
+    (setq merlin-auto-hl--identifier-timer nil)))
 
 (defun merlin-auto-hl--set-timer ()
+  "Set an idle timer in charge of calling the function to display all the information."
   (merlin-auto-hl--cancel-timer)
   (setq merlin-auto-hl--current-hl-identifier-idle-time merlin-auto-hl-idle-time)
   (setq merlin-auto-hl--identifier-timer (run-with-idle-timer
@@ -130,8 +131,7 @@ identifier at point, if necessary."
 
 ;;;###autoload
 (define-minor-mode merlin-auto-hl-mode
-  "Highlight instances of the identifier at point after a short
-timeout."
+  "Highlight instances of the identifier at point after a short timeout."
   nil nil nil
   (if merlin-auto-hl-mode
       (merlin-auto-hl--set-timer)
@@ -139,4 +139,4 @@ timeout."
 
 (provide 'merlin-auto-hl)
 
-;;; merlin-auto-hl.el ends here’
+;;; merlin-auto-hl.el ends here
