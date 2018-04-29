@@ -1,4 +1,4 @@
-;;; merlin-auto-hl.el --- Automatic display of type information for OCaml
+;;; merlin-auto-hl.el --- Auto OCaml type info  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2018 Louis Roché
 
