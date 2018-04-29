@@ -7,6 +7,7 @@
 ;; Version: 0.1
 ;; Keywords: merlin ocaml languages
 ;; Homepage: https://github.com/khady/merlin-auto-hl
+;; Package-Requires: ((emacs "24.3"))
 
 ;; This file is not part of GNU Emacs.
 
