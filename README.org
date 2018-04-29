@@ -1,9 +1,9 @@
-#+TITLE: Merlin auto highlight mode
+#+TITLE: Merlin backend for eldoc
 
-This package is a minor mode for Emacs. Its goal is to automatically
-display the type, documentation and occurrences of the value under the
-point in OCaml or ReasonML files. The information are obtained from
-merlin.
+This package provide a merlin backend for eldoc. Its goal is to
+automatically (without using keybindings) display the type,
+documentation and occurrences of the value under the point in OCaml or
+ReasonML files. The information are obtained from merlin.
 
 * Installation
 
@@ -14,59 +14,60 @@ For now the package is not published on melpa.
 With quelpa already installed and configured:
 
 #+BEGIN_SRC emacs-lisp
-(quelpa '(merlin-auto-hl :repo "Khady/merlin-auto-hl" :fetcher github))
+(quelpa '(merlin-eldoc :repo "Khady/merlin-eldoc" :fetcher github))
 #+END_SRC
 
 ** With ~use-package~
 
-1. Clone this repository in ~$HOME/.emacs.d/bootleg~
+1. Clone this repository in ~$HOME/.emacs.d/vendor~
 
    #+BEGIN_SRC bash
-mkdir -p "$HOME/.emacs.d/bootleg"
-cd "$HOME/.emacs.d/bootleg"
-git clone https://github.com/Khady/merlin-auto-hl.git
+mkdir -p "$HOME/.emacs.d/vendor"
+cd "$HOME/.emacs.d/vendor"
+git clone https://github.com/Khady/merlin-eldoc.git
    #+END_SRC
 
 2. Add this code to ~init.el~
 
    #+BEGIN_SRC emacs-lisp
-(use-package merlin-auto-hl
-  :load-path "~/.emacs.d/bootleg/merlin-auto-hl/"
-  :hook ((reason-mode tuareg-mode caml-mode) . merlin-auto-hl-mode))
+(use-package merlin-eldoc
+  :load-path "~/.emacs.d/vendor/merlin-eldoc/"
+  :hook ((reason-mode tuareg-mode caml-mode) . merlin-eldoc-setup))
    #+END_SRC
 
 ** The more manual way
 
-1. Clone this repository in ~$HOME/.emacs.d/bootleg~
+1. Clone this repository in ~$HOME/.emacs.d/vendor~
 
    #+BEGIN_SRC bash
-mkdir -p "$HOME/.emacs.d/bootleg"
-cd "$HOME/.emacs.d/bootleg"
-git clone https://github.com/Khady/merlin-auto-hl.git
+mkdir -p "$HOME/.emacs.d/vendor"
+cd "$HOME/.emacs.d/vendor"
+git clone https://github.com/Khady/merlin-eldoc.git
    #+END_SRC
 
 2. Add this code to ~init.el~
 
    #+BEGIN_SRC emacs-lisp
 ;; Add the folder containing this package to the load-path
-(add-to-list 'load-path "~/.emacs.d/bootleg/merlin-auto-hl/")
+(add-to-list 'load-path "~/.emacs.d/vendor/merlin-eldoc/")
 ;; Require the package
-(require 'merlin-auto-hl)
+(require 'merlin-eldoc)
 ;; Add a hook to start the mode automatically for OCaml and Reason
-(add-hook 'tuareg-mode-hook 'merlin-auto-hl-mode)
-(add-hook 'reason-mode-hook 'merlin-auto-hl-mode)
+(add-hook 'tuareg-mode-hook 'merlin-eldoc-setup)
+(add-hook 'reason-mode-hook 'merlin-eldoc-setup)
    #+END_SRC
 
 * Usage
 
-If a hook has been configured, then there is nothing to do. The mode
-should be launched automatically when an OCaml file is visited.
+If a hook has been configured, then there is nothing to do. The eldoc
+mode should be launched automatically when an OCaml file is
+visited. And merlin will provide type information when available.
 
-Otherwise, it can be launched by executing ~M-x merlin-auto-hl-mode~.
+Otherwise, it can be launched by executing ~M-x merlin-eldoc-setup~.
 
 Once this is done, as soon as the point is on a word which is not a
-keyword, a type should be displayed in the message box when the cursor
-doesn't move for more than 0.5 seconds.
+keyword, a type should be displayed in the echo area when the cursor
+doesn't move for some time.
 
 * Demo
 
@@ -74,11 +75,3 @@ doesn't move for more than 0.5 seconds.
 [[https://d.khady.info/merlin-auto-hl.ogv][file:merlin-auto-hl.gif]]
 
 Note that merlin is never called explicitly in this video.
-
-* Inspiration
-
-- https://github.com/ocaml/merlin/issues/796
-- https://github.com/ananthakumaran/tide/blob/master/tide.el#L1991-L2096
-- https://github.com/ocaml/merlin/issues/500
-- https://github.com/infinity0/l33tutils/blob/master/devel/emacs/site-lisp/merlin-extra.el
-- https://github.com/fsharp/emacs-fsharp-mode/blob/master/fsharp-doc.el
