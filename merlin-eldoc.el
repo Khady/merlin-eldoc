@@ -88,7 +88,6 @@
                                                   font-lock-comment-delimiter-face
                                                   font-lock-doc-face)))
 
-
 (defun merlin-eldoc--in-string-p (pos)
   "Check character at POS is string by comparing font face."
   (merlin-eldoc--current-font-among-fonts-p pos '(font-lock-string-face)))
@@ -96,8 +95,7 @@
 (defun merlin-eldoc--is-keyword-p (pos)
   "Check if character at POS is keyword by comparing font face."
   (merlin-eldoc--current-font-among-fonts-p pos '(tuareg-font-lock-governing-face
-                                                    font-lock-keyword-face)))
-
+                                                  font-lock-keyword-face)))
 (defun merlin-eldoc--valid-position-p (pos)
   "Check if POS is in a place valid to get a type."
   (and (not (merlin-eldoc--in-comment-p pos))
@@ -122,6 +120,16 @@
     (font-lock-fontify-region (point-min) (point-max))
     (buffer-string)))
 
+(defvar merlin-eldoc--doc-error-messages
+  '("No documentation available"
+    "Not a valid identifier")
+  "List of invalid values for the documentation.")
+
+(defun merlin-eldoc--skip-doc-p (doc)
+  "Look for invalid values of DOC"
+  (delq nil (mapcar (lambda (s) (equal s doc))
+                    merlin-eldoc--doc-error-messages)))
+
 ;;; Main logic
 
 (defun merlin-eldoc--type ()
@@ -143,7 +151,10 @@
 
 (defun merlin-eldoc--raw-doc ()
   "Gather raw documentation of the thing at point."
-  (if merlin-eldoc-doc (merlin--document-pos nil)))
+  (if (and merlin-eldoc-doc (not (merlin-eldoc--in-string-p (point))))
+      (let ((doc (merlin--document-pos nil)))
+        (if (not (merlin-eldoc--skip-doc-p doc))
+            doc))))
 
 (defun merlin-eldoc--max-doc-length (type delim)
   "Compute the maximum length allowed for the documentation base on TYPE and DELIM."
@@ -189,6 +200,15 @@ Return nil if the doc doesn't fit"
                 (t nil))))
     (if doc (concat comment-start doc comment-end))))
 
+(defun merlin-eldoc--format-type-and-doc (type doc)
+  "Combine TYPE and DOC into one string."
+  (let* ((max-doc-len (merlin-eldoc--max-doc-length type merlin-eldoc-delimiter))
+         (formated-doc (merlin-eldoc--format-doc doc max-doc-len))
+         (multiline-type (merlin-eldoc--multiline-p type)))
+    (cond ((and formated-doc multiline-type) (concat formated-doc "\n" type))
+          (formated-doc (concat type merlin-eldoc-delimiter formated-doc))
+          (t type))))
+
 (defun merlin-eldoc--eldoc ()
   "Get information about the thing at point for `eldoc-mode'."
   (interactive)
@@ -198,17 +218,12 @@ Return nil if the doc doesn't fit"
              (merlin-eldoc--valid-position-p (point)))
     (let* ((type (merlin-eldoc--type))
            (doc (merlin-eldoc--raw-doc))
-           (occurrences nil))
-      (merlin-eldoc--fontify
-       (cond ((and type doc)
-              (let* ((max-doc-len (merlin-eldoc--max-doc-length type merlin-eldoc-delimiter))
-                     (formated-doc (merlin-eldoc--format-doc doc max-doc-len))
-                     (multiline-type (merlin-eldoc--multiline-p type)))
-                (cond ((and formated-doc multiline-type) (concat formated-doc "\n" type))
-                      (formated-doc (concat type merlin-eldoc-delimiter formated-doc))
-                      (t type))))
-             (type type)
-             (doc doc))))))
+           (occurrences nil)
+           (output (cond ((and type doc) (merlin-eldoc--format-type-and-doc type doc))
+                         (type type)
+                         (doc doc)
+                         (t nil))))
+      (if output (merlin-eldoc--fontify output)))))
 
 ;;;###autoload
 (defun merlin-eldoc-setup ()
