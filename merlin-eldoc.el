@@ -152,6 +152,10 @@
               (length type)
               (length merlin-eldoc-delimiter)))))
 
+(defun merlin-eldoc--wrap-doc (doc)
+  "Trim all lines of DOC and merge them in one line"
+  (mapconcat 'identity (delete "" (split-string doc)) " "))
+
 (defun merlin-eldoc--format-doc (raw-doc &optional max)
   "Format documentation for display in echo area.
 Wrap RAW-DOC to a single line if total length is lte MAX.
@@ -159,26 +163,25 @@ Otherwise take only the first line.  Add comment delimiters.
 Return nil if the doc doesn't fit"
   (let* ((raw-doc (string-trim raw-doc))
          (nl (string-match "\n" raw-doc))
+         (raw-doc (merlin-eldoc--wrap-doc raw-doc))
          (com-len (+ (length comment-start) (length comment-end)))
          (max (- (if max max (merlin-eldoc--ea-width)) com-len)) ; take into account the comment delimiters
          (short (<= (length raw-doc) max))
          (max-trunc (- max (length merlin-eldoc-truncate-marker)))
          (doc
-          (cond ((and (not nl) short)
-                 ;; The doc is a single line and fits.
+          (cond (short
+                 ;; The doc fits on one line.
                  raw-doc)
-                ((and nl short)
-                 ;; The whole doc fits on one line.
-                 (replace-regexp-in-string "\n" " " raw-doc))
                 ((and nl (<= nl max-trunc))
-                 ;; Try to display the truncate marker if there is
-                 ;; space after the first newline.
+                 ;; Display the first line.  Try to display the
+                 ;; truncate marker if there is space after the first
+                 ;; newline.
                  (concat (substring raw-doc 0 nl) merlin-eldoc-truncate-marker))
                 ((and nl (<= nl max))
                  ;; Display the first line even the there is no space
                  ;; for the truncate marker.
                  (substring raw-doc 0 nl))
-                ((and (> max-trunc 0) (>= max 10))
+                ((and (> max-trunc 10))
                  ;; The doc is too long to be nicely formated, but
                  ;; there is enough space to display relevant
                  ;; information. Return a truncated version.
