@@ -36,6 +36,7 @@
 ;;; Code:
 
 (require 'eldoc)
+(require 'newcomment)
 (require 'merlin)
 
 (defgroup merlin-eldoc nil
@@ -158,7 +159,8 @@ Otherwise take only the first line.  Add comment delimiters.
 Return nil if the doc doesn't fit"
   (let* ((raw-doc (string-trim raw-doc))
          (nl (string-match "\n" raw-doc))
-         (max (- (if max max (merlin-eldoc--ea-width)) 6)) ; take into account the comment delimiters
+         (com-len (+ (length comment-start) (length comment-end)))
+         (max (- (if max max (merlin-eldoc--ea-width)) com-len)) ; take into account the comment delimiters
          (short (<= (length raw-doc) max))
          (max-trunc (- max (length merlin-eldoc-truncate-marker)))
          (doc
@@ -182,7 +184,7 @@ Return nil if the doc doesn't fit"
                  ;; information. Return a truncated version.
                  (concat (substring raw-doc 0 max-trunc) merlin-eldoc-truncate-marker))
                 (t nil))))
-    (if doc (concat "(* " doc " *)"))))
+    (if doc (concat comment-start doc comment-end))))
 
 (defun merlin-eldoc--eldoc ()
   "Get information about the thing at point for `eldoc-mode'."
