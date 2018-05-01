@@ -83,15 +83,15 @@
                   fontfaces))))
 
 (defun merlin-eldoc--in-comment-p (pos)
-  "Check character at POS is comment by comparing font face."
+  "Check character at POS is comment or documentation by comparing font face."
   (merlin-eldoc--current-font-among-fonts-p pos '(font-lock-comment-face
-                                                    font-lock-comment-delimiter-face)))
+                                                  font-lock-comment-delimiter-face
+                                                  font-lock-doc-face)))
 
 
-(defun merlin-eldoc--in-string-or-doc-p (pos)
-  "Check character at POS is string or document by comparing font face."
-  (merlin-eldoc--current-font-among-fonts-p pos '(font-lock-string-face
-                                                    font-lock-doc-face)))
+(defun merlin-eldoc--in-string-p (pos)
+  "Check character at POS is string by comparing font face."
+  (merlin-eldoc--current-font-among-fonts-p pos '(font-lock-string-face)))
 
 (defun merlin-eldoc--is-keyword-p (pos)
   "Check if character at POS is keyword by comparing font face."
@@ -101,7 +101,7 @@
 (defun merlin-eldoc--valid-position-p (pos)
   "Check if POS is in a place valid to get a type."
   (and (not (merlin-eldoc--in-comment-p pos))
-       (or (not (merlin-eldoc--is-keyword-p pos)) (merlin-eldoc--in-string-or-doc-p pos))))
+       (or (not (merlin-eldoc--is-keyword-p pos)) (merlin-eldoc--in-string-p pos))))
 
 (defun merlin-eldoc--multiline-p (s)
   "Check if there are multiple lines in S."
@@ -154,7 +154,7 @@
 
 (defun merlin-eldoc--wrap-doc (doc)
   "Trim all lines of DOC and merge them in one line"
-  (mapconcat 'identity (delete "" (split-string doc)) " "))
+  (string-join (delete "" (split-string doc)) " "))
 
 (defun merlin-eldoc--format-doc (raw-doc &optional max)
   "Format documentation for display in echo area.
