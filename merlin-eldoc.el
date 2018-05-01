@@ -1,4 +1,4 @@
-;;; merlin-eldoc.el --- eldoc setup for OCaml  -*- lexical-binding: t -*-
+;;; merlin-eldoc.el --- eldoc for OCaml and Reason  -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2018 Louis Roché
 
@@ -7,7 +7,7 @@
 ;; Version: 0.1
 ;; Keywords: merlin ocaml languages eldoc
 ;; Homepage: https://github.com/khady/merlin-eldoc
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "24.4"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -106,48 +106,50 @@
   "Check if there are multiple lines in S."
   (if (string-match "\n" s) t nil))
 
-;;; Main logic
+(defun merlin-eldoc--ea-width ()
+  "Get writable width of the echo area."
+  ;; Subtract 1 from window width since emacs will not write
+  ;; any chars to the last column, or in later versions, will
+  ;; cause a wraparound and resize of the echo area.
+  (1- (window-width (minibuffer-window))))
 
-(defun merlin-eldoc--type-string (type bounds)
-  "Get the type TYPE of the expression occuring at BOUNDS as a string."
-  (if (not type) "<no information>")
-  (merlin/display-in-type-buffer type)
+(defun merlin-eldoc--fontify (s)
+  "Fontify the string S."
+  (if (not s) "<no information>")
+  (merlin/display-in-type-buffer s)
   (with-current-buffer merlin-type-buffer-name
     (font-lock-fontify-region (point-min) (point-max))
     (buffer-string)))
+
+;;; Main logic
 
 (defun merlin-eldoc--type ()
   "Gather type of the symbol at point."
-  (setq merlin--verbosity-cache nil) ; reset verbosity to not display deeper types
-  (if (region-active-p)
-      (merlin--type-region)
-    (merlin--type-enclosing-query)
-    (when merlin-enclosing-types
-      (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
-        (if (and (cddr data)
-                 (merlin--is-short (merlin--type-enclosing-text data)))
-            (merlin-eldoc--type-string (merlin--type-enclosing-text data) (cdr data))
-          (concat "type is too long, check buffer `"
-                  merlin-type-buffer-name
-                  "' or query the type manually"))))))
+  (if (not merlin-eldoc-type)
+      nil
+    (setq merlin--verbosity-cache nil) ; reset verbosity to not display deeper types
+    (if (region-active-p)
+        (merlin--type-region)
+      (merlin--type-enclosing-query)
+      (when merlin-enclosing-types
+        (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
+          (if (and (cddr data)
+                   (merlin--is-short (merlin--type-enclosing-text data)))
+              (merlin--type-enclosing-text data)
+            (concat "(* type is too long, check buffer `"
+                    merlin-type-buffer-name
+                    "' or query the type manually *)")))))))
 
 (defun merlin-eldoc--raw-doc ()
   "Gather raw documentation of the thing at point."
-  (merlin--document-pos nil))
+  (if merlin-eldoc-doc (merlin--document-pos nil)))
 
 (defun merlin-eldoc--max-doc-length (type delim)
   "Compute the maximum length allowed for the documentation base on TYPE and DELIM."
-  (cond ((merlin-eldoc--multiline-p type) (window-body-width (minibuffer-window)))
-        (t (- (window-body-width (minibuffer-window))
+  (cond ((merlin-eldoc--multiline-p type) (merlin-eldoc--ea-width))
+        (t (- (merlin-eldoc--ea-width)
               (length type)
               (length merlin-eldoc-delimiter)))))
-
-(defun merlin-eldoc--fontify-doc (doc)
-  "Fontify DOC."
-  (merlin/display-in-type-buffer doc)
-  (with-current-buffer merlin-type-buffer-name
-    (font-lock-fontify-region (point-min) (point-max))
-    (buffer-string)))
 
 (defun merlin-eldoc--format-doc (raw-doc &optional max)
   "Format documentation for display in echo area.
@@ -156,38 +158,52 @@ Otherwise take only the first line.  Add comment delimiters.
 Return nil if the doc doesn't fit"
   (let* ((raw-doc (string-trim raw-doc))
          (nl (string-match "\n" raw-doc))
-         (max (- (if max max (window-body-width (minibuffer-window))) 6)) ; take into account the comment delimiters
+         (max (- (if max max (merlin-eldoc--ea-width)) 6)) ; take into account the comment delimiters
          (short (<= (length raw-doc) max))
-         (trunc-len (length merlin-eldoc-truncate-marker))
+         (max-trunc (- max (length merlin-eldoc-truncate-marker)))
          (doc
-          (cond ((and nl short) (replace-regexp-in-string "\n" " " raw-doc))
-                ((and nl (<= nl (- max trunc-len))) ; best effort to display marker
+          (cond ((and (not nl) short)
+                 ;; The doc is a single line and fits.
+                 raw-doc)
+                ((and nl short)
+                 ;; The whole doc fits on one line.
+                 (replace-regexp-in-string "\n" " " raw-doc))
+                ((and nl (<= nl max-trunc))
+                 ;; Try to display the truncate marker if there is
+                 ;; space after the first newline.
                  (concat (substring raw-doc 0 nl) merlin-eldoc-truncate-marker))
-                ((and nl (<= nl max)) (substring raw-doc 0 nl))
-                (short raw-doc)
-                ((and (> (- max trunc-len) 0) (>= max 10))
-                 (concat (substring raw-doc 0 (- max trunc-len)) merlin-eldoc-truncate-marker))
+                ((and nl (<= nl max))
+                 ;; Display the first line even the there is no space
+                 ;; for the truncate marker.
+                 (substring raw-doc 0 nl))
+                ((and (> max-trunc 0) (>= max 10))
+                 ;; The doc is too long to be nicely formated, but
+                 ;; there is enough space to display relevant
+                 ;; information. Return a truncated version.
+                 (concat (substring raw-doc 0 max-trunc) merlin-eldoc-truncate-marker))
                 (t nil))))
-    (if doc (merlin-eldoc--fontify-doc (concat "(* " doc " *)")))))
+    (if doc (concat "(* " doc " *)"))))
 
 (defun merlin-eldoc--eldoc ()
-  "Get information about the thing at point for symbol `eldoc-mode'."
+  "Get information about the thing at point for `eldoc-mode'."
   (interactive)
-  (when (and (not (string-equal merlin-type-buffer-name (buffer-name)))
+  (when (and (thing-at-point 'symbol)
+             (not (string-equal merlin-type-buffer-name (buffer-name)))
              (not (minibufferp))
              (merlin-eldoc--valid-position-p (point)))
     (let* ((type (merlin-eldoc--type))
            (doc (merlin-eldoc--raw-doc))
            (occurrences nil))
-      (cond ((and type doc)
-             (let* ((max-doc-len (merlin-eldoc--max-doc-length type merlin-eldoc-delimiter))
-                    (formated-doc (merlin-eldoc--format-doc doc max-doc-len))
-                    (multiline-type (merlin-eldoc--multiline-p type)))
-               (cond ((and formated-doc multiline-type) (concat formated-doc "\n" type))
-                     (formated-doc (concat type merlin-eldoc-delimiter formated-doc))
-                     (t type))))
-            (type type)
-            (doc doc)))))
+      (merlin-eldoc--fontify
+       (cond ((and type doc)
+              (let* ((max-doc-len (merlin-eldoc--max-doc-length type merlin-eldoc-delimiter))
+                     (formated-doc (merlin-eldoc--format-doc doc max-doc-len))
+                     (multiline-type (merlin-eldoc--multiline-p type)))
+                (cond ((and formated-doc multiline-type) (concat formated-doc "\n" type))
+                      (formated-doc (concat type merlin-eldoc-delimiter formated-doc))
+                      (t type))))
+             (type type)
+             (doc doc))))))
 
 ;;;###autoload
 (defun merlin-eldoc-setup ()
