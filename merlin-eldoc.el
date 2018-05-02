@@ -122,13 +122,15 @@
 
 (defvar merlin-eldoc--doc-error-messages
   '("No documentation available"
-    "Not a valid identifier")
+    "Not a valid identifier"
+    "Not in environment '*'"
+    "is a builtin, no documentation is available")
   "List of invalid values for the documentation.")
 
 (defun merlin-eldoc--skip-doc-p (doc)
-  "Look for invalid values of DOC"
-  (delq nil (mapcar (lambda (s) (equal s doc))
-                    merlin-eldoc--doc-error-messages)))
+  "Look for invalid values of DOC based on value `merlin-eldoc--doc-error-messages'."
+  (find-if (lambda (s) (string-match-p s doc))
+           merlin-eldoc--doc-error-messages))
 
 ;;; Main logic
 
