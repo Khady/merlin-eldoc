@@ -166,7 +166,7 @@
               (length merlin-eldoc-delimiter)))))
 
 (defun merlin-eldoc--wrap-doc (doc)
-  "Trim all lines of DOC and merge them in one line"
+  "Trim all lines of DOC and merge them in one line."
   (string-join (delete "" (split-string doc)) " "))
 
 (defun merlin-eldoc--format-doc (raw-doc &optional max)
@@ -211,8 +211,8 @@ Return nil if the doc doesn't fit"
           (formated-doc (concat type merlin-eldoc-delimiter formated-doc))
           (t type))))
 
-(defun merlin-eldoc--eldoc ()
-  "Get information about the thing at point for `eldoc-mode'."
+(defun merlin-eldoc--gather-info ()
+  "Get information about the thing at point and format them into a string."
   (interactive)
   (when (and (thing-at-point 'symbol)
              (not (string-equal merlin-type-buffer-name (buffer-name)))
@@ -231,7 +231,7 @@ Return nil if the doc doesn't fit"
 (defun merlin-eldoc-setup ()
   "Setup eldoc for OCaml/Reasonml based on merlin."
   (interactive)
-  (setq-local eldoc-documentation-function #'merlin-eldoc--eldoc)
+  (setq-local eldoc-documentation-function #'merlin-eldoc--gather-info)
   (eldoc-mode t))
 
 (provide 'merlin-eldoc)
