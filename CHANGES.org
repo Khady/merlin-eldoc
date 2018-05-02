@@ -1,0 +1,21 @@
+* Changelog
+
+All notable changes to this project will be documented in this file.
+
+** Unreleased
+
+   - Don't display anything when the point is in an area marked as an
+     error by merlin.
+
+** 1.1 - [2018-05-02 Wed]
+
+   - Support reason comment syntax when showing documentation.
+   - Better display of documentation when it is wrapped in one line.
+   - Fix detection of valid position (handles spaces in strings, skip
+     comments and documentation).
+   - Filter documentation when it is an error message from merlin.
+
+** 1.0 - [2018-05-01 Tue]
+
+   - Basic version working with ~eldoc-mode~.
+   - Provides type of symbol at point.
