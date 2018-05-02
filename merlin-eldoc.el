@@ -69,6 +69,13 @@
   :type 'string
   :group 'merlin-eldoc)
 
+(defcustom merlin-eldoc-skip-on-merlin-error t
+  "Don't show anything if merlin marked the area where the point is as an error.
+If nil it is possible that eldoc and merlin will fight to show
+information and error at the same time.  Only one tool can win."
+  :type 'boolean
+  :group 'merlin-eldoc)
+
 ;;; Utils
 
 ;; imported from evil-matchit
@@ -96,10 +103,16 @@
   "Check if character at POS is keyword by comparing font face."
   (merlin-eldoc--current-font-among-fonts-p pos '(tuareg-font-lock-governing-face
                                                   font-lock-keyword-face)))
+
 (defun merlin-eldoc--valid-position-p (pos)
   "Check if POS is in a place valid to get a type."
-  (and (not (merlin-eldoc--in-comment-p pos))
-       (or (not (merlin-eldoc--is-keyword-p pos)) (merlin-eldoc--in-string-p pos))))
+  (let ((symbol (thing-at-point 'symbol))
+        (string (merlin-eldoc--in-string-p pos))
+        (comment (merlin-eldoc--in-comment-p pos))
+        (keyword (merlin-eldoc--is-keyword-p pos)))
+    (and (or symbol string)
+         (not comment)
+         (or (not keyword) string))))
 
 (defun merlin-eldoc--multiline-p (s)
   "Check if there are multiple lines in S."
@@ -131,6 +144,13 @@
   "Look for invalid values of DOC based on value `merlin-eldoc--doc-error-messages'."
   (find-if (lambda (s) (string-match-p s doc))
            merlin-eldoc--doc-error-messages))
+
+(defun merlin-eldoc--merlin-error-at-point-p ()
+  "Search if place under point is marked as error by merlin."
+  (when merlin-mode
+    (let* ((pos (point)) (beg pos) (end (1+ pos))
+           (errors (overlays-in beg end)))
+      (find-if 'merlin--overlay-pending-error errors))))
 
 ;;; Main logic
 
@@ -214,10 +234,11 @@ Return nil if the doc doesn't fit"
 (defun merlin-eldoc--gather-info ()
   "Get information about the thing at point and format them into a string."
   (interactive)
-  (when (and (thing-at-point 'symbol)
-             (not (string-equal merlin-type-buffer-name (buffer-name)))
+  (when (and (not (string-equal merlin-type-buffer-name (buffer-name)))
              (not (minibufferp))
-             (merlin-eldoc--valid-position-p (point)))
+             (merlin-eldoc--valid-position-p (point))
+             (not (and merlin-eldoc-skip-on-merlin-error
+                       (merlin-eldoc--merlin-error-at-point-p))))
     (let* ((type (merlin-eldoc--type))
            (doc (merlin-eldoc--raw-doc))
            (occurrences nil)
