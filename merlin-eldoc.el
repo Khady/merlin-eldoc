@@ -178,12 +178,12 @@ information and error at the same time.  Only one tool can win."
         (if (not (merlin-eldoc--skip-doc-p doc))
             doc))))
 
-(defun merlin-eldoc--max-doc-length (type delim)
-  "Compute the maximum length allowed for the documentation base on TYPE and DELIM."
+(defun merlin-eldoc--max-doc-length (type delimiter)
+  "Compute maximum length allowed for documentation based on TYPE and DELIMITER."
   (cond ((merlin-eldoc--multiline-p type) (merlin-eldoc--ea-width))
         (t (- (merlin-eldoc--ea-width)
               (length type)
-              (length merlin-eldoc-delimiter)))))
+              (length delimiter)))))
 
 (defun merlin-eldoc--wrap-doc (doc)
   "Trim all lines of DOC and merge them in one line."
