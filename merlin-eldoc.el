@@ -240,11 +240,11 @@ the documentation."
   "Adjust max len variables based on eldoc settings."
   (when (not eldoc-echo-area-use-multiline-p)
     (setq-local merlin-eldoc--max-lines 1))
-  (when (> merlin-eldoc--max-lines-type merlin-eldoc--max-lines)
-    (setq-local merlin-eldoc--max-lines-type merlin-eldoc--max-lines))
-  (when (and (integerp merlin-eldoc--max-lines-doc)
-             (> merlin-eldoc--max-lines-doc merlin-eldoc--max-lines))
-    (setq-local merlin-eldoc--max-lines-doc merlin-eldoc--max-lines)))
+  (when (> merlin-eldoc-max-lines-type merlin-eldoc-max-lines)
+    (setq-local merlin-eldoc--max-lines-type merlin-eldoc-max-lines))
+  (when (and (integerp merlin-eldoc-max-lines-doc)
+             (> merlin-eldoc-max-lines-doc merlin-eldoc-max-lines))
+    (setq-local merlin-eldoc--max-lines-doc merlin-eldoc-max-lines)))
 
 (defun merlin-eldoc--type ()
   "Gather type of the symbol at point."
@@ -280,15 +280,16 @@ The value returned is one of:
   - multi (doc should fit in multiple lines)."
   (let* ((doc-lines (length doc))
          (type-lines (if type-lines type-lines 0))
-         (doc-max-lines (min (- merlin-eldoc--max-lines type-lines)
-                             merlin-eldoc--max-lines-doc))
+         (doc-max-lines (- merlin-eldoc--max-lines type-lines))
          (doc-type (cond ((integerp merlin-eldoc--max-lines-doc) 'multi)
                          (t merlin-eldoc--max-lines-doc))))
-    (cond ((not eldoc-echo-area-use-multiline-p) 'fit)
+    (cond ((or (not eldoc-echo-area-use-multiline-p)
+               (equal merlin-eldoc--max-lines-doc 'fit)) 'fit)
           ((> type-lines 1)
-           (cond ((> doc-max-lines 1) doc-type)
+           (cond ((equal merlin-eldoc--max-lines-doc 'fit) 'fit)
+                 ((= doc-max-lines 0) 'fit)
                  ((= doc-max-lines 1) 'single)
-                 ((= doc-max-lines 0) 'fit)))
+                 ((> doc-max-lines 1) doc-type)))
           ((or (equal eldoc-echo-area-use-multiline-p 'truncate-sym-name-if-fit)
                (equal doc-type 'fit))
            'fit)
@@ -315,18 +316,27 @@ The value returned is one of:
         (concat (substring doc 0 max-trunc) merlin-eldoc-truncate-marker)
       doc)))
 
-(defun merlin-eldoc--format-doc-fit (doc type)
-  "Format DOC to fit with TYPE on a single line."
+(defun merlin-eldoc--format-doc-fit-all (doc type-len)
+  "Format DOC to fit with a type of length TYPE-LEN"
   (let* ((com-len (+ (length comment-start) (length comment-end)))
          (doc (merlin-eldoc--wrap doc))
-         (type-len (if type (length type) 0))
-         (delimiter-len (if type (length merlin-eldoc-delimiter) 0))
+         (delimiter-len (if type-len (length merlin-eldoc-delimiter) 0))
          (max-width (- (merlin-eldoc--minibuffer-width) com-len type-len delimiter-len))
          (max-trunc (- max-width (length merlin-eldoc-truncate-marker))))
     (cond ((and (> (length doc) max-width) (>= max-width 10))
            (concat (substring doc 0 max-trunc) merlin-eldoc-truncate-marker))
           ((< max-width 10) nil)
           (t doc))))
+
+(defun merlin-eldoc--format-doc-fit (doc type)
+  "Format DOC to fit with TYPE on a single line."
+  (merlin-eldoc--format-doc-fit-all doc (if type (length type) 0)))
+
+(defun merlin-eldoc--format-doc-fit-multiline (doc type)
+  "Format DOC to fit on one line with multiline TYPE."
+  (let* ((type-nl (if type (string-match "\n" (reverse type))))
+         (type-len (if type-nl type-nl 0)))
+    (merlin-eldoc--format-doc-fit-all doc type-len)))
 
 (defun merlin-eldoc--format-doc (doc &optional type)
   "Format DOC for display in echo area.  Adapt to TYPE if provided."
@@ -336,9 +346,12 @@ The value returned is one of:
          (doc (cond
                ((equal shape 'multi) (merlin-eldoc--format-doc-multi doc-split type-lines))
                ((equal shape 'single) (merlin-eldoc--format-doc-single doc))
+               ((and (equal shape 'fit) (> type-lines 1))
+                (merlin-eldoc--format-doc-fit-multiline doc type))
                ((equal shape 'fit) (merlin-eldoc--format-doc-fit doc type))))
          (doc (if doc (concat comment-start doc comment-end))))
-    (cond ((not type) doc)
+    (cond ((not doc) type)
+          ((not type) doc)
           ((equal shape 'fit) (concat type merlin-eldoc-delimiter doc))
           (t (concat doc "\n" type)))))
 
