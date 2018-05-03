@@ -339,7 +339,7 @@ The value returned is one of:
                ((equal shape 'fit) (merlin-eldoc--format-doc-fit doc type))))
          (doc (if doc (concat comment-start doc comment-end))))
     (cond ((not type) doc)
-          ((equal shape 'fit) (concat doc merlin-eldoc-delimiter type))
+          ((equal shape 'fit) (concat type merlin-eldoc-delimiter doc))
           (t (concat doc "\n" type)))))
 
 (defun merlin-eldoc--gather-info ()
