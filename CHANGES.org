@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
    - Don't display anything when the point is in an area marked as an
      error by merlin.
+   - Handle ~eldoc-echo-area-use-multiline-p~ and add new settings to
+     configure number of lines for type and doc.
 
 ** 1.1 - [2018-05-02 Wed]
 

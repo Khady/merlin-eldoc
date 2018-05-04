@@ -211,11 +211,7 @@ the documentation."
 
 (defun merlin-eldoc--count-lines (s)
   "Count number of lines in string S."
-  (let ((count 1) (pos 0))
-    (while (string-match "\n" s pos)
-      (setq pos (match-end 0))
-      (setq count (1+ count)))
-    count))
+  (cl-count ?\n s))
 
 (defun merlin-eldoc--short-p (s max)
   "Check if S contains less than MAX lines."

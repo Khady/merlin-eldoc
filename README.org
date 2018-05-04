@@ -69,6 +69,49 @@ Once this is done, as soon as the point is on a word which is not a
 keyword, a type should be displayed in the echo area when the cursor
 doesn't move for some time.
 
+It is possible to configure the shape of the results using both eldoc
+and merlin-eldoc configurations. It allows to choose on how many lines
+the result will fit, if the documentation can be truncated, how to
+concatenate type and documentation...
+
+For eldoc, the value to configure is
+~eldoc-echo-area-use-multiline-p~.
+
+For merlin-eldoc, the easiest way it so use the customize interface to
+get access to all the possible values and the corresponding
+documentation.
+
+#+BEGIN_SRC
+M-x merlin-eldoc-customize RET
+#+END_SRC
+
+The main values are:
+
+- ~merlin-eldoc-type~ to enable or disable the display of the type.
+- ~merlin-eldoc-doc~ to enable or disable the display of the
+  documentation.
+- ~merlin-eldoc-max-lines~ to set on how many lines the result should
+  fit.
+
+* Configuration example
+
+#+BEGIN_SRC emacs-lisp
+(quelpa '(merlin-eldoc :repo "Khady/merlin-eldoc" :fetcher github))
+
+;; use multiple lines when necessary
+(setq eldoc-echo-area-use-multiline-p t)
+
+;; but no more than 10
+(setq merlin-eldoc-max-lines 10)
+
+;; don't dedicate a line to the documentation
+(setq merlin-eldoc-max-lines-doc 'fit)
+
+;; start merlin-eldoc when editing ocaml and reason files
+(add-hook 'tuareg-mode-hook #'merlin-eldoc-setup)
+(add-hook 'reason-mode-hook #'merlin-eldoc-setup)
+#+END_SRC
+
 * Demo
 
 Short video of demonstration with both type and documentation enabled:
