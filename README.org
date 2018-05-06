@@ -19,7 +19,7 @@ let my<-!->add ~f ~i =
   f +. (float i)
    #+END_SRC
 
-The information in the minibuffer will be:
+   The information in the minibuffer will be:
 
    #+BEGIN_SRC ocaml
 f:float -> i:int -> float
@@ -33,7 +33,7 @@ let my<-!->add ~f ~i =
   f +. (float i)
    #+END_SRC
 
-With type and doc enabled, it shows:
+   With type and doc enabled, it shows:
 
    #+BEGIN_SRC ocaml
 f:float -> i:int -> float     (* [myadd f i] add f and i *)
@@ -45,7 +45,7 @@ f:float -> i:int -> float     (* [myadd f i] add f and i *)
 List.map<-!->
    #+END_SRC
 
-The exact result will depend on the width of the Emacs frame.
+   The exact result will depend on the width of the Emacs frame.
 
    #+BEGIN_SRC ocaml
 ('a -> 'b) -> 'a list -> 'b list (* [List.map f [a1; ...; an]] applies function [f] to [a1, ..., an], and builds... *)
