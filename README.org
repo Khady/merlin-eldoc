@@ -3,7 +3,116 @@
 This package provide a merlin backend for eldoc. Its goal is to
 automatically (without using keybindings) display the type,
 documentation and occurrences of the value under the point in OCaml or
-ReasonML files. The information are obtained from merlin.
+ReasonML files. It also provides the type of arguments expected by a
+function when this function is getting applied. The information are
+obtained from merlin.
+
+* Examples
+
+In the following example, the cursor is at ~<-!->~ and idle long
+enough for eldoc to fire.
+
+1. Type of a function
+
+   #+BEGIN_SRC ocaml
+let my<-!->add ~f ~i =
+  f +. (float i)
+   #+END_SRC
+
+The information in the minibuffer will be:
+
+   #+BEGIN_SRC ocaml
+f:float -> i:int -> float
+   #+END_SRC
+
+2. Type and documentation of a function
+
+   #+BEGIN_SRC ocaml
+(** [myadd f i] add f and i *)
+let my<-!->add ~f ~i =
+  f +. (float i)
+   #+END_SRC
+
+With type and doc enabled, it shows:
+
+   #+BEGIN_SRC ocaml
+f:float -> i:int -> float     (* [myadd f i] add f and i *)
+   #+END_SRC
+
+3. Type and documentation of ~List.map~ limited to one line
+
+   #+BEGIN_SRC ocaml
+List.map<-!->
+   #+END_SRC
+
+The exact result will depend on the width of the Emacs frame.
+
+   #+BEGIN_SRC ocaml
+('a -> 'b) -> 'a list -> 'b list (* [List.map f [a1; ...; an]] applies function [f] to [a1, ..., an], and builds... *)
+   #+END_SRC
+
+4. Type and documentation of ~List.map~ on multiple lines
+
+   #+BEGIN_SRC ocaml
+List.map<-!->
+   #+END_SRC
+
+   If at least 4 lines are allowed:
+
+   #+BEGIN_SRC ocaml
+(* [List.map f [a1; ...; an]] applies function [f] to [a1, ..., an],
+   and builds the list [[f a1; ...; f an]]
+   with the results returned by [f].  Not tail-recursive. *)
+('a -> 'b) -> 'a list -> 'b list
+   #+END_SRC
+
+5. Function application and arguments types
+
+   #+BEGIN_SRC ocaml
+let apply ~f ~i op =
+  op @@ f +. (float i)
+
+let v = apply <-!->
+   #+END_SRC
+
+   #+BEGIN_SRC ocaml
+(* expected type: *) float -> 'a
+(* labels: *) ~f:float -> ~i:int
+   #+END_SRC
+
+   Depending on the value of
+   ~merlin-eldoc-max-lines-function-arguments~ it can also be
+   displayed on one line.
+
+   #+BEGIN_SRC ocaml
+(* expected type: *) float -> 'a (* labels: *) ~f:float -> ~i:int
+   #+END_SRC
+
+6. Function application and arguments types, with some arguments already given
+
+   #+BEGIN_SRC ocaml
+let apply ~f ~i op =
+  op @@ f +. (float i)
+
+let v = apply ~i:3 <-!->
+   #+END_SRC
+
+   #+BEGIN_SRC ocaml
+(* expected type: *) float -> 'a (* labels: *) ~f:float
+   #+END_SRC
+
+7. Type expected by a label
+
+   #+BEGIN_SRC ocaml
+let apply ~f ~i op =
+  op @@ f +. (float i)
+
+let v = apply ~i:<-!->
+   #+END_SRC
+
+   #+BEGIN_SRC ocaml
+(* expected type: *) int
+   #+END_SRC
 
 * Installation
 

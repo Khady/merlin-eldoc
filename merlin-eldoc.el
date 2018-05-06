@@ -35,6 +35,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'eldoc)
 (require 'newcomment)
 (require 'merlin)
@@ -51,6 +52,11 @@
 
 (defcustom merlin-eldoc-doc t
   "Enable display of documentation for the thing at point."
+  :type 'boolean
+  :group 'merlin-eldoc)
+
+(defcustom merlin-eldoc-function-arguments t
+  "Enable display of expected arguments when calling a function."
   :type 'boolean
   :group 'merlin-eldoc)
 
@@ -89,6 +95,14 @@ a single line.  If value is truncate-sym-name-if-fit, result will
 be as compact as possible.  For example if type and documentation
 are both one line long and can be combined to fit on a single
 line, they will be merged into one line."
+  :type 'integer
+  :group 'merlin-eldoc)
+
+(defcustom merlin-eldoc-max-lines-function-arguments merlin-eldoc-max-lines
+  "Maximum number of lines the arguments of the function can use.
+
+If value is more than `merlin-eldoc-max-lines', it is replaced by
+`merlin-eldoc-max-lines'.  If less than 1, it is replaced by 1."
   :type 'integer
   :group 'merlin-eldoc)
 
@@ -161,7 +175,7 @@ the documentation."
   (merlin-eldoc--current-font-among-fonts-p pos '(tuareg-font-lock-governing-face
                                                   font-lock-keyword-face)))
 
-(defun merlin-eldoc--valid-position-p (pos)
+(defun merlin-eldoc--valid-type-position-p (pos)
   "Check if POS is in a place valid to get a type."
   (let ((symbol (thing-at-point 'symbol))
         (string (merlin-eldoc--in-string-p pos))
@@ -170,10 +184,6 @@ the documentation."
     (and (or symbol string)
          (not comment)
          (or (not keyword) string))))
-
-(defun merlin-eldoc--multiline-p (s)
-  "Check if there are multiple lines in S."
-  (if (string-match "\n" s) t nil))
 
 (defun merlin-eldoc--minibuffer-width ()
   "Get writable width of the minibuffer."
@@ -214,12 +224,37 @@ the documentation."
   (cl-count ?\n s))
 
 (defun merlin-eldoc--short-p (s max)
-  "Check if S contains less than MAX lines."
+  "Return t if S contains less than MAX lines."
   (<= (merlin-eldoc--count-lines s) max))
 
 (defun merlin-eldoc--wrap (text)
   "Trim all lines of TEXT and merge them in one line."
   (string-join (delete "" (split-string text)) " "))
+
+(defun merlin-eldoc--split-line (line max-len)
+  "Split LINE into a list of lines not larger than MAX-LEN.
+This function does not detect the presence of existing line
+breaks and so doesn't preserve existing lines. In general it
+should be used with text which is only on one line."
+  (let ((len (length line)))
+    (if (> len max-len)
+        (let* ((trunc-position-rev (string-match split-string-default-separators
+                                                 (reverse line) (- len max-len)))
+               (trunc-position (if trunc-position-rev (- len trunc-position-rev) max-len))
+               (beginning (substring line 0 (1- trunc-position)))
+               (end (substring line trunc-position len)))
+          (cons beginning (merlin-eldoc--split-line end max-len)))
+      (list line))))
+
+(defun merlin-eldoc--lines-of-text (text &optional max-len)
+  "Return the list of all lines from TEXT.
+If a line is longer than MAX-LEN, it is turned into multiple
+lines.  If MAX-LEN is not provided, it is the width of the
+minibuffer."
+  (let* ((max-len (if max-len max-len (merlin-eldoc--minibuffer-width)))
+         (lines (delete "" (split-string text "[\r\n]+")))
+         (lines (mapcar (lambda (l) (merlin-eldoc--split-line l max-len)) lines)))
+    (apply #'append lines)))
 
 ;;; Main logic
 
@@ -230,17 +265,33 @@ the documentation."
   "Local copy of `merlin-eldoc-max-lines-type' adjusted to follow max lines.")
 
 (defvar merlin-eldoc--max-lines-doc merlin-eldoc-max-lines-doc
-  "Local copy of `merlin-eldoc-max-lines' adjusted to follow max lines.")
+  "Local copy of `merlin-eldoc-max-lines-doc' adjusted to follow max lines.")
+
+(defvar merlin-eldoc--max-lines-fun-args
+  merlin-eldoc-max-lines-function-arguments
+  "Local copy of `merlin-eldoc-max-lines-function-arguments' adjusted to follow max lines.")
 
 (defun merlin-eldoc--adjust-max-len ()
   "Adjust max len variables based on eldoc settings."
-  (when (not eldoc-echo-area-use-multiline-p)
+  ;; merlin-eldoc--max-lines
+  (setq merlin-eldoc--max-lines merlin-eldoc-max-lines)
+  (when (or (not eldoc-echo-area-use-multiline-p)
+            (< merlin-eldoc--max-lines 1))
     (setq-local merlin-eldoc--max-lines 1))
-  (when (> merlin-eldoc-max-lines-type merlin-eldoc-max-lines)
-    (setq-local merlin-eldoc--max-lines-type merlin-eldoc-max-lines))
+  ;; merlin-eldoc--max-lines-type
+  (when (> merlin-eldoc-max-lines-type merlin-eldoc--max-lines)
+    (setq-local merlin-eldoc--max-lines-type merlin-eldoc--max-lines))
+  (when (< merlin-eldoc-max-lines-type 1)
+    (setq-local merlin-eldoc--max-lines-type 1))
+  ;; merlin-eldoc--max-lines-doc
   (when (and (integerp merlin-eldoc-max-lines-doc)
-             (> merlin-eldoc-max-lines-doc merlin-eldoc-max-lines))
-    (setq-local merlin-eldoc--max-lines-doc merlin-eldoc-max-lines)))
+             (> merlin-eldoc-max-lines-doc merlin-eldoc--max-lines))
+    (setq-local merlin-eldoc--max-lines-doc merlin-eldoc--max-lines))
+  ;; merlin-eldoc--max-lines-fun-args
+  (when (> merlin-eldoc-max-lines-function-arguments merlin-eldoc--max-lines)
+    (setq-local merlin-eldoc--max-lines-fun-args merlin-eldoc--max-lines))
+  (when (< merlin-eldoc-max-lines-function-arguments 1)
+    (setq-local merlin-eldoc--max-lines-fun-args 1)))
 
 (defun merlin-eldoc--type ()
   "Gather type of the symbol at point."
@@ -267,15 +318,14 @@ the documentation."
         (if (not (merlin-eldoc--skip-doc-p doc))
             (string-trim doc)))))
 
-(defun merlin-eldoc--shape (doc &optional type-lines)
-  "Find display shape of DOC based on TYPE-LINES and eldoc config.
+(defun merlin-eldoc--shape (type-lines)
+  "Return display shape based on TYPE-LINES and eldoc config.
 DOC must be a list of lines and TYPE-LINES a count of lines in type.
 The value returned is one of:
   - fit (doc and type should fit on a line),
   - single (doc should fit on one dedicated line)
   - multi (doc should fit in multiple lines)."
-  (let* ((doc-lines (length doc))
-         (type-lines (if type-lines type-lines 0))
+  (let* ((type-lines (if type-lines type-lines 0))
          (doc-max-lines (- merlin-eldoc--max-lines type-lines))
          (doc-type (cond ((integerp merlin-eldoc--max-lines-doc) 'multi)
                          (t merlin-eldoc--max-lines-doc))))
@@ -336,9 +386,9 @@ The value returned is one of:
 
 (defun merlin-eldoc--format-doc (doc &optional type)
   "Format DOC for display in echo area.  Adapt to TYPE if provided."
-  (let* ((doc-split (delete "" (split-string doc "[\r\n]+")))
+  (let* ((doc-split (delete "" (merlin-eldoc--lines-of-text doc)))
          (type-lines (if type (merlin-eldoc--count-lines type) 0))
-         (shape (merlin-eldoc--shape doc-split type-lines))
+         (shape (merlin-eldoc--shape type-lines))
          (doc (cond
                ((equal shape 'multi) (merlin-eldoc--format-doc-multi doc-split type-lines))
                ((equal shape 'single) (merlin-eldoc--format-doc-single doc))
@@ -351,22 +401,75 @@ The value returned is one of:
           ((equal shape 'fit) (concat type merlin-eldoc-delimiter doc))
           (t (concat doc "\n" type)))))
 
+(defun merlin-eldoc--gather-type-and-doc-info ()
+  "Return a string with type and/or document of the thing at point."
+  (let* ((type (merlin-eldoc--type))
+         (doc (merlin-eldoc--raw-doc))
+         (output (cond ((and type doc) (merlin-eldoc--format-doc doc type))
+                       (type type)
+                       (doc (merlin-eldoc--format-doc doc))
+                       (t nil))))
+    (if output (merlin-eldoc--fontify output))))
+
+(defun merlin-eldoc--format-args-single (text)
+  "Format TEXT content into a string fitting on a single line."
+  (let* ((hint (merlin-eldoc--wrap text))
+         (max-width (merlin-eldoc--minibuffer-width))
+         (max-trunc (- max-width (length merlin-eldoc-truncate-marker))))
+    (if (> (length hint) max-width)
+        (concat (substring hint 0 max-trunc) merlin-eldoc-truncate-marker)
+      hint)))
+
+(defun merlin-eldoc--format-label (label)
+  "Format type and name of LABEL."
+  (let* ((name (cdr (assoc 'name label)))
+         (type (cdr (assoc 'type label)))
+         (type (if (string-match-p "->" type) (format "(%s)" type) type)))
+    (format "%s:%s" (string-remove-prefix "~" name) type)))
+
+(defun merlin-eldoc--gather-fun-args ()
+  "Return a string with expected types for function application."
+  (interactive)
+  (let* ((data (merlin/call "complete-prefix"
+                            "-position" (merlin/unmake-point (point))
+                            "-prefix" ""
+                            "-doc" "n"))
+         (context (cdr (assoc 'context data)))
+         (application (and (listp context)
+                           (equal (car context) "application")
+                           (cadr context)))
+         ;; argument type
+         (expected-ty (and application
+                           (not (string-equal "'_a" (cdr (assoc 'argument_type application))))
+                           (cdr (assoc 'argument_type application))))
+         ;; labels
+         (labels (and application (cdr (assoc 'labels application))))
+         (labels (mapcar #'merlin-eldoc--format-label labels))
+         (labels (if labels (string-join labels " -> ")))
+         (output (cond ((and labels expected-ty)
+                        (format "(* expected type *) %s\n(* labels *) %s"
+                                expected-ty labels))
+                       (labels (format "(* expected labels *) %s" labels))
+                       (expected-ty (format "(* expected type *) %s" expected-ty))
+                       (t nil))))
+    (when output
+      (let* ((lines (merlin-eldoc--lines-of-text output))
+             (output (if (> (length lines) merlin-eldoc--max-lines)
+                         (merlin-eldoc--format-args-single output)
+                       output)))
+        (merlin-eldoc--fontify output)))))
+
 (defun merlin-eldoc--gather-info ()
   "Get information about the thing at point and format them into a string."
   (interactive)
   (when (and (not (string-equal merlin-type-buffer-name (buffer-name)))
              (not (minibufferp))
-             (merlin-eldoc--valid-position-p (point))
              (not (and merlin-eldoc-skip-on-merlin-error
                        (merlin-eldoc--merlin-error-at-point-p))))
     (merlin-eldoc--adjust-max-len)
-    (let* ((type (merlin-eldoc--type))
-           (doc (merlin-eldoc--raw-doc))
-           (output (cond ((and type doc) (merlin-eldoc--format-doc doc type))
-                         (type type)
-                         (doc (merlin-eldoc--format-doc doc))
-                         (t nil))))
-      (if output (merlin-eldoc--fontify output)))))
+    (if (merlin-eldoc--valid-type-position-p (point))
+        (merlin-eldoc--gather-type-and-doc-info)
+      (merlin-eldoc--gather-fun-args))))
 
 ;;;###autoload
 (defun merlin-eldoc-setup ()
