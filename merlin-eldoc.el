@@ -218,7 +218,7 @@ before to call this function."
   (when merlin-mode
     (let* ((pos (point)) (beg pos) (end (1+ pos))
            (errors (overlays-in beg end)))
-      (cl-find-if 'merlin--overlay-pending-error errors))))
+      (cl-find-if #'merlin--overlay-pending-error errors))))
 
 (defun merlin-eldoc--count-lines (s)
   "Count number of lines in string S."
