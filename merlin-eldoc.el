@@ -47,41 +47,34 @@
 
 (defcustom merlin-eldoc-type t
   "Enable display of type for the thing at point."
-  :type 'boolean
-  :group 'merlin-eldoc)
+  :type 'boolean)
 
 (defcustom merlin-eldoc-doc t
   "Enable display of documentation for the thing at point."
-  :type 'boolean
-  :group 'merlin-eldoc)
+  :type 'boolean)
 
 (defcustom merlin-eldoc-function-arguments t
   "Enable display of expected arguments when calling a function."
-  :type 'boolean
-  :group 'merlin-eldoc)
+  :type 'boolean)
 
 ;; TODO:
 (defcustom merlin-eldoc-occurrences t
   "Enable highlight of other occurrences of the thing at point."
-  :type 'boolean
-  :group 'merlin-eldoc)
+  :type 'boolean)
 
 (defcustom merlin-eldoc-delimiter "     "
   "Delimiter between type and documentation if both are to be displayed."
-  :type 'string
-  :group 'merlin-eldoc)
+  :type 'string)
 
-(defcustom merlin-eldoc-truncate-marker "..."
+(defcustom merlin-eldoc-truncate-marker "…"
   "Marker used to show when the documentation has been truncated."
-  :type 'string
-  :group 'merlin-eldoc)
+  :type 'string)
 
 (defcustom merlin-eldoc-skip-on-merlin-error t
   "Don't show anything if merlin marked the area where the point is as an error.
 If nil it is possible that eldoc and merlin will fight to show
 information and error at the same time.  Only one tool can win."
-  :type 'boolean
-  :group 'merlin-eldoc)
+  :type 'boolean)
 
 (defcustom merlin-eldoc-max-lines
   (cond ((equal eldoc-echo-area-use-multiline-p 'truncate-sym-name-if-fit) 8)
@@ -89,22 +82,24 @@ information and error at the same time.  Only one tool can win."
         ((equal eldoc-echo-area-use-multiline-p nil) 1))
   "Maximum number of lines that will be used to display information.
 
-The final result depends on `eldoc-echo-area-use-multiline-p'.
-If value is nil, this setting will be ignored and result will be
-a single line.  If value is truncate-sym-name-if-fit, result will
-be as compact as possible.  For example if type and documentation
-are both one line long and can be combined to fit on a single
-line, they will be merged into one line."
-  :type 'integer
-  :group 'merlin-eldoc)
+The number of lines used by result also depends on
+`eldoc-echo-area-use-multiline-p'.
+
+If the value of `eldoc-echo-area-use-multiline-p' is nil, this
+setting will be ignored and result will be a single line.  If
+value is truncate-sym-name-if-fit, result will be as compact as
+possible.  For example if type and documentation are both one
+line long and can be combined to fit on a single line, they will
+be merged into one line.  Otherwise `merlin-eldoc-max-lines' will
+be respected."
+  :type 'integer)
 
 (defcustom merlin-eldoc-max-lines-function-arguments merlin-eldoc-max-lines
   "Maximum number of lines the arguments of the function can use.
 
 If value is more than `merlin-eldoc-max-lines', it is replaced by
 `merlin-eldoc-max-lines'.  If less than 1, it is replaced by 1."
-  :type 'integer
-  :group 'merlin-eldoc)
+  :type 'integer)
 
 (defcustom merlin-eldoc-max-lines-type merlin-eldoc-max-lines
   "Maximum number of lines the type can use.
@@ -115,8 +110,7 @@ If value is more than `merlin-eldoc-max-lines', it is replaced by
 See documentation of `merlin-eldoc-max-lines-doc' for more
 details on interaction between `merlin-eldoc-max-lines-type' and
 `merlin-eldoc-max-lines-doc'"
-  :type 'integer
-  :group 'merlin-eldoc)
+  :type 'integer)
 
 (defcustom merlin-eldoc-max-lines-doc merlin-eldoc-max-lines
   "Maximum number of lines the documentation can use.
@@ -144,8 +138,7 @@ If the type is 3 lines long, only 2 lines will be available for
 the documentation."
   :type '(radio (integer :tag "number of lines'")
                 (const :tag "dedicate a single line to the doc" single)
-                (const :tag "fit the type and doc on one line" fit))
-  :group 'merlin-eldoc)
+                (const :tag "fit the type and doc on one line" fit)))
 
 ;;; Utils
 
@@ -161,22 +154,31 @@ the documentation."
                   fontfaces))))
 
 (defun merlin-eldoc--in-comment-p (pos)
-  "Check character at POS is comment or documentation by comparing font face."
+  "Return non-nil if character at POS is comment or documentation.
+This is done by comparing font face.  So a mode such as
+`tuareg-mode' or `reason-mode' must be activated in the buffer
+before to call this function."
   (merlin-eldoc--current-font-among-fonts-p pos '(font-lock-comment-face
                                                   font-lock-comment-delimiter-face
                                                   font-lock-doc-face)))
 
 (defun merlin-eldoc--in-string-p (pos)
-  "Check character at POS is string by comparing font face."
+  "Return non-nil if character at POS is string.
+This is done by comparing font face.  So a mode such as
+`tuareg-mode' or `reason-mode' must be activated in the buffer
+before to call this function."
   (merlin-eldoc--current-font-among-fonts-p pos '(font-lock-string-face)))
 
 (defun merlin-eldoc--is-keyword-p (pos)
-  "Check if character at POS is keyword by comparing font face."
+  "Return non-nil if character at POS is keyword.
+This is done by comparing font face.  So a mode such as
+`tuareg-mode' or `reason-mode' must be activated in the buffer
+before to call this function."
   (merlin-eldoc--current-font-among-fonts-p pos '(tuareg-font-lock-governing-face
                                                   font-lock-keyword-face)))
 
 (defun merlin-eldoc--valid-type-position-p (pos)
-  "Check if POS is in a place valid to get a type."
+  "Return non-nil if POS is in a place valid to get a type."
   (let ((symbol (thing-at-point 'symbol))
         (string (merlin-eldoc--in-string-p pos))
         (comment (merlin-eldoc--in-comment-p pos))
@@ -194,7 +196,6 @@ the documentation."
 
 (defun merlin-eldoc--fontify (s)
   "Fontify the string S."
-  (if (not s) "<no information>")
   (merlin/display-in-type-buffer s)
   (with-current-buffer merlin-type-buffer-name
     (font-lock-fontify-region (point-min) (point-max))
@@ -203,28 +204,28 @@ the documentation."
 (defvar merlin-eldoc--doc-error-messages
   '("No documentation available"
     "Not a valid identifier"
-    "Not in environment '*'"
+    "Not in environment '.*'"
     "is a builtin, no documentation is available")
-  "List of invalid values for the documentation.")
+  "List of regexp used to match invalid values for the documentation.")
 
 (defun merlin-eldoc--skip-doc-p (doc)
   "Look for invalid values of DOC based on value `merlin-eldoc--doc-error-messages'."
-  (find-if (lambda (s) (string-match-p s doc))
-           merlin-eldoc--doc-error-messages))
+  (cl-find-if (lambda (s) (string-match-p s doc))
+              merlin-eldoc--doc-error-messages))
 
 (defun merlin-eldoc--merlin-error-at-point-p ()
-  "Search if place under point is marked as error by merlin."
+  "Return non-nil if place under point is marked as error by merlin."
   (when merlin-mode
     (let* ((pos (point)) (beg pos) (end (1+ pos))
            (errors (overlays-in beg end)))
-      (find-if 'merlin--overlay-pending-error errors))))
+      (cl-find-if 'merlin--overlay-pending-error errors))))
 
 (defun merlin-eldoc--count-lines (s)
   "Count number of lines in string S."
   (cl-count ?\n s))
 
 (defun merlin-eldoc--short-p (s max)
-  "Return t if S contains less than MAX lines."
+  "Return non-nil if S contains less than MAX lines."
   (<= (merlin-eldoc--count-lines s) max))
 
 (defun merlin-eldoc--wrap (text)
@@ -234,7 +235,7 @@ the documentation."
 (defun merlin-eldoc--split-line (line max-len)
   "Split LINE into a list of lines not larger than MAX-LEN.
 This function does not detect the presence of existing line
-breaks and so doesn't preserve existing lines. In general it
+breaks and so doesn't preserve existing lines.  In general it
 should be used with text which is only on one line."
   (let ((len (length line)))
     (if (> len max-len)
@@ -294,9 +295,8 @@ minibuffer."
     (setq-local merlin-eldoc--max-lines-fun-args 1)))
 
 (defun merlin-eldoc--type ()
-  "Gather type of the symbol at point."
-  (if (not merlin-eldoc-type)
-      nil
+  "Return a string containing type of the symbol at point."
+  (when merlin-eldoc-type
     (setq merlin--verbosity-cache nil) ; reset verbosity to not display deeper types
     (if (region-active-p)
         (merlin--type-region)
@@ -312,11 +312,11 @@ minibuffer."
                     "' or query the type manually *)")))))))
 
 (defun merlin-eldoc--raw-doc ()
-  "Gather raw documentation of the thing at point."
-  (if (and merlin-eldoc-doc (not (merlin-eldoc--in-string-p (point))))
-      (let ((doc (merlin--document-pos nil)))
-        (if (not (merlin-eldoc--skip-doc-p doc))
-            (string-trim doc)))))
+  "Return a string containing raw documentation of the thing at point."
+  (when (and merlin-eldoc-doc (not (merlin-eldoc--in-string-p (point))))
+    (let ((doc (merlin--document-pos nil)))
+      (when (not (merlin-eldoc--skip-doc-p doc))
+        (string-trim doc)))))
 
 (defun merlin-eldoc--shape (type-lines)
   "Return display shape based on TYPE-LINES and eldoc config.
@@ -363,7 +363,7 @@ The value returned is one of:
       doc)))
 
 (defun merlin-eldoc--format-doc-fit-all (doc type-len)
-  "Format DOC to fit with a type of length TYPE-LEN"
+  "Format DOC to fit with a type of length TYPE-LEN."
   (let* ((com-len (+ (length comment-start) (length comment-end)))
          (doc (merlin-eldoc--wrap doc))
          (delimiter-len (if type-len (length merlin-eldoc-delimiter) 0))
@@ -460,7 +460,7 @@ The value returned is one of:
         (merlin-eldoc--fontify output)))))
 
 (defun merlin-eldoc--gather-info ()
-  "Get information about the thing at point and format them into a string."
+  "Return a string containing information about the thing at point."
   (interactive)
   (when (and (not (string-equal merlin-type-buffer-name (buffer-name)))
              (not (minibufferp))
