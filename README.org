@@ -1,16 +1,17 @@
 #+TITLE: Merlin backend for eldoc
 
-This package provide a merlin backend for eldoc. Its goal is to
+This package provides a merlin backend for eldoc. Its goal is to
 automatically (without using keybindings) display the type,
-documentation and occurrences of the value under the point in OCaml or
-ReasonML files. It also provides the type of arguments expected by a
-function when this function is getting applied. The information are
+documentation and occurrences of the value under point in OCaml and
+ReasonML files. It also provides the types of the arguments expected by a
+function when it is getting applied. This information is
 obtained from merlin.
 
 * Examples
 
-In the following example, the cursor is at ~<-!->~ and idle long
-enough for eldoc to fire.
+In the following examples, the cursor is at ~<-!->~. After the
+requisite idle time, eldoc will fire and show the corresponding
+information in the minibuffer.
 
 1. Type of a function
 
@@ -66,7 +67,7 @@ List.map<-!->
 ('a -> 'b) -> 'a list -> 'b list
    #+END_SRC
 
-5. Function application and arguments types
+5. Function application and argument types
 
    #+BEGIN_SRC ocaml
 let apply ~f ~i op =
@@ -88,7 +89,7 @@ let v = apply <-!->
 (* expected type: *) float -> 'a (* labels: *) ~f:float -> ~i:int
    #+END_SRC
 
-6. Function application and arguments types, with some arguments already given
+6. Function application and argument types, with some arguments already given
 
    #+BEGIN_SRC ocaml
 let apply ~f ~i op =
