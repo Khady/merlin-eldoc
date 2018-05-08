@@ -118,6 +118,8 @@ let v = apply ~i:<-!->
 (* expected type: *) int
    #+END_SRC
 
+Two videos are played bellow for a more visual demonstration.
+
 * Installation
 
 For now the package is not published on melpa.
@@ -203,8 +205,10 @@ The main values are:
 - ~merlin-eldoc-type~ to enable or disable the display of the type.
 - ~merlin-eldoc-doc~ to enable or disable the display of the
   documentation.
-- ~merlin-eldoc-max-lines~ to set on how many lines the result should
-  fit.
+- ~merlin-eldoc-doc~ to enable or disable the highlighting of all the
+  occurrences of the identifier at point.
+- ~merlin-eldoc-max-lines~ to set on how many lines should fit the
+  message printed in the minibuffer.
 
 * Configuration example
 
@@ -227,10 +231,23 @@ The main values are:
 
 * Demo
 
-Short video of demonstration with both type and documentation enabled:
+Video showing the following features provided by this package:
 
-#+ATTR_HTML: title="demo video"
-[[https://d.khady.info/merlin-eldoc.ogv][file:merlin-eldoc.gif]]
+- Type of value at point
+- Highlight other occurrences of the identifier
+- Type hints while calling function
+- Documentation of function/value at point
+
+All those operations are automatically called by ~eldoc~ when the
+cursor is idle for 0.5s.
+
+#+ATTR_HTML: title="full demo video"
+[[https://d.khady.info/merlin-eldoc-long.ogv][file:full-demo.gif]]
+
+Short video of demonstration with only type and documentation enabled:
+
+#+ATTR_HTML: title="short demo video"
+[[https://d.khady.info/merlin-eldoc.ogv][file:demo.gif]]
 
 Note that merlin is never called explicitly in this video. The only
 action is to move the pointer from one place to another.
