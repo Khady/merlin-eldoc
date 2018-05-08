@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
      configure number of lines for type and doc.
    - Provide hint of expected type and labels when applying a
      function.
+   - Highlight occurrences of value at point.
 
 ** 1.1 - [2018-05-02 Wed]
 

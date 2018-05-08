@@ -7,6 +7,9 @@ ReasonML files. It also provides the types of the arguments expected by a
 function when it is getting applied. This information is
 obtained from merlin.
 
+Please see the [[file:CHANGES.org][changelog]] for recent improvements and list of changes
+between versions.
+
 * Examples
 
 In the following examples, the cursor is at ~<-!->~. After the

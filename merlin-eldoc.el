@@ -57,7 +57,6 @@
   "Enable display of expected arguments when calling a function."
   :type 'boolean)
 
-;; TODO:
 (defcustom merlin-eldoc-occurrences t
   "Enable highlight of other occurrences of the thing at point."
   :type 'boolean)
@@ -411,6 +410,44 @@ The value returned is one of:
                        (t nil))))
     (if output (merlin-eldoc--fontify output))))
 
+(defun merlin-eldoc--occurrences ()
+  "Produce list of BOUNDS (of the form (START . END)) of occurrences of the symbol at point."
+  (merlin/call "occurrences"
+               "-identifier-at" (merlin/unmake-point (point))))
+
+(defun merlin-eldoc--highlight-occurrence (bounds face)
+  "Create an overlay on BOUNDS (of the form (START . END)) and give FACE."
+  (let ((overlay (make-overlay (car bounds) (cdr bounds))))
+    (overlay-put overlay 'face face)
+    (overlay-put overlay 'merlin-eldoc 'occurrences)))
+
+(defun merlin-eldoc--unhighlight-occurrences ()
+  "Remove highlights from previously highlighted identifiers."
+  (remove-overlays nil nil 'merlin-eldoc 'occurrences))
+
+(defun merlin-eldoc--highlight-occurrences ()
+  "Create an overlay on all the occurences of symbol at point."
+  (when merlin-eldoc-occurrences
+    (merlin-eldoc--unhighlight-occurrences)
+    (dolist (occ (merlin-eldoc--occurrences))
+      (merlin-eldoc--highlight-occurrence
+       (merlin--make-bounds occ) 'merlin-type-face))))
+
+(defun merlin-eldoc--on-overlay-p (id)
+  "Return whether point is on a tide overlay of type ID."
+  (cl-find-if (lambda (el)
+                (eq (overlay-get el 'merlin-eldoc) id))
+              (overlays-at (point))))
+
+(defun merlin-eldoc--hl-identifiers-post-command-hook ()
+  "Unhighlight if point moves off identifier."
+  (unless (merlin-eldoc--on-overlay-p 'occurrences)
+    (merlin-eldoc--unhighlight-occurrences)))
+
+(defun merlin-eldoc--hl-identifiers-before-change-function (_beg _end)
+  "Unhighlight any time the buffer changes."
+  (merlin-eldoc--unhighlight-occurrences))
+
 (defun merlin-eldoc--format-args-single (text)
   "Format TEXT content into a string fitting on a single line."
   (let* ((hint (merlin-eldoc--wrap text))
@@ -454,7 +491,8 @@ The value returned is one of:
                        (t nil))))
     (when output
       (let* ((lines (merlin-eldoc--lines-of-text output))
-             (output (if (> (length lines) merlin-eldoc--max-lines)
+             (lines (length lines))
+             (output (if (> lines merlin-eldoc--max-lines-fun-args)
                          (merlin-eldoc--format-args-single output)
                        output)))
         (merlin-eldoc--fontify output)))))
@@ -467,16 +505,31 @@ The value returned is one of:
              (not (and merlin-eldoc-skip-on-merlin-error
                        (merlin-eldoc--merlin-error-at-point-p))))
     (merlin-eldoc--adjust-max-len)
-    (if (merlin-eldoc--valid-type-position-p (point))
-        (merlin-eldoc--gather-type-and-doc-info)
-      (merlin-eldoc--gather-fun-args))))
+    (cond ((merlin-eldoc--valid-type-position-p (point))
+           (merlin-eldoc--highlight-occurrences)
+           (merlin-eldoc--gather-type-and-doc-info))
+          (t (merlin-eldoc--gather-fun-args)))))
 
 ;;;###autoload
 (defun merlin-eldoc-setup ()
   "Setup eldoc for OCaml/Reasonml based on merlin."
   (interactive)
   (setq-local eldoc-documentation-function #'merlin-eldoc--gather-info)
+  (add-hook 'post-command-hook
+            #'merlin-eldoc--hl-identifiers-post-command-hook nil t)
+  (add-hook 'before-change-functions
+            #'merlin-eldoc--hl-identifiers-before-change-function nil t)
   (eldoc-mode t))
+
+;;;###autoload
+(defun merlin-eldoc-disable ()
+  "Cleanup hooks created by merlin-eldoc."
+  (interactive)
+  (merlin-eldoc--unhighlight-occurrences)
+  (remove-hook 'post-command-hook
+               #'merlin-eldoc--hl-identifiers-post-command-hook t)
+  (remove-hook 'before-change-functions
+               #'merlin-eldoc--hl-identifiers-before-change-function t))
 
 ;;;###autoload
 (defun merlin-eldoc-customize ()
