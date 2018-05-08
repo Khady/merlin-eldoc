@@ -202,11 +202,13 @@ M-x merlin-eldoc-customize RET
 
 The main values are:
 
-- ~merlin-eldoc-type~ to enable or disable the display of the type.
 - ~merlin-eldoc-doc~ to enable or disable the display of the
   documentation.
-- ~merlin-eldoc-doc~ to enable or disable the highlighting of all the
+- ~merlin-eldoc-type~ to enable or disable the display of the type.
+- ~merlin-eldoc-occurrences~ to enable or disable the highlighting of all the
   occurrences of the identifier at point.
+- ~merlin-eldoc-function-arguments~ to enable or disable the hints
+  when applying arguments to a function.
 - ~merlin-eldoc-max-lines~ to set on how many lines should fit the
   message printed in the minibuffer.
 
