@@ -526,6 +526,7 @@ The value returned is one of:
   "Cleanup hooks created by merlin-eldoc."
   (interactive)
   (merlin-eldoc--unhighlight-occurrences)
+  (setq-local eldoc-documentation-function #'ignore)
   (remove-hook 'post-command-hook
                #'merlin-eldoc--hl-identifiers-post-command-hook t)
   (remove-hook 'before-change-functions
