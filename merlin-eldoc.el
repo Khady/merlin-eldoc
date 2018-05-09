@@ -35,6 +35,7 @@
 
 ;;; Code:
 
+(require 'subr-x)
 (require 'cl-lib)
 (require 'eldoc)
 (require 'newcomment)
