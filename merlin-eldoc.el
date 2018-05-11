@@ -191,6 +191,15 @@ before to call this function."
          (not comment)
          (or (not keyword) string))))
 
+(defun merlin-eldoc--valid-fun-args-position-p (pos)
+  "Return non-nil if POS is in a place valid to get a type."
+  (let ((symbol (thing-at-point 'symbol))
+        (string (merlin-eldoc--in-string-p pos))
+        (comment (merlin-eldoc--in-comment-p pos)))
+    (and (not symbol)
+         (not comment)
+         (not string))))
+
 (defun merlin-eldoc--minibuffer-width ()
   "Get writable width of the minibuffer."
   ;; Subtract 1 from window width since emacs will not write
@@ -472,35 +481,36 @@ The value returned is one of:
 (defun merlin-eldoc--gather-fun-args ()
   "Return a string with expected types for function application."
   (interactive)
-  (let* ((data (merlin/call "complete-prefix"
-                            "-position" (merlin/unmake-point (point))
-                            "-prefix" ""
-                            "-doc" "n"))
-         (context (cdr (assoc 'context data)))
-         (application (and (listp context)
-                           (equal (car context) "application")
-                           (cadr context)))
-         ;; argument type
-         (expected-ty (and application
-                           (not (string-equal "'_a" (cdr (assoc 'argument_type application))))
-                           (cdr (assoc 'argument_type application))))
-         ;; labels
-         (labels (and application (cdr (assoc 'labels application))))
-         (labels (mapcar #'merlin-eldoc--format-label labels))
-         (labels (if labels (string-join labels " -> ")))
-         (output (cond ((and labels expected-ty)
-                        (format "(* expected type *) %s\n(* labels *) %s"
-                                expected-ty labels))
-                       (labels (format "(* expected labels *) %s" labels))
-                       (expected-ty (format "(* expected type *) %s" expected-ty))
-                       (t nil))))
-    (when output
-      (let* ((lines (merlin-eldoc--lines-of-text output))
-             (lines (length lines))
-             (output (if (> lines merlin-eldoc--max-lines-fun-args)
-                         (merlin-eldoc--format-args-single output)
-                       output)))
-        (merlin-eldoc--fontify output)))))
+  (when merlin-eldoc-function-arguments
+    (let* ((data (merlin/call "complete-prefix"
+                              "-position" (merlin/unmake-point (point))
+                              "-prefix" ""
+                              "-doc" "n"))
+           (context (cdr (assoc 'context data)))
+           (application (and (listp context)
+                             (equal (car context) "application")
+                             (cadr context)))
+           ;; argument type
+           (expected-ty (and application
+                             (not (string-equal "'_a" (cdr (assoc 'argument_type application))))
+                             (cdr (assoc 'argument_type application))))
+           ;; labels
+           (labels (and application (cdr (assoc 'labels application))))
+           (labels (mapcar #'merlin-eldoc--format-label labels))
+           (labels (if labels (string-join labels " -> ")))
+           (output (cond ((and labels expected-ty)
+                          (format "(* expected type *) %s\n(* labels *) %s"
+                                  expected-ty labels))
+                         (labels (format "(* expected labels *) %s" labels))
+                         (expected-ty (format "(* expected type *) %s" expected-ty))
+                         (t nil))))
+      (when output
+        (let* ((lines (merlin-eldoc--lines-of-text output))
+               (lines (length lines))
+               (output (if (> lines merlin-eldoc--max-lines-fun-args)
+                           (merlin-eldoc--format-args-single output)
+                         output)))
+          (merlin-eldoc--fontify output))))))
 
 (defun merlin-eldoc--gather-info ()
   "Return a string containing information about the thing at point."
@@ -513,7 +523,9 @@ The value returned is one of:
     (cond ((merlin-eldoc--valid-type-position-p (point))
            (merlin-eldoc--highlight-occurrences)
            (merlin-eldoc--gather-type-and-doc-info))
-          (t (merlin-eldoc--gather-fun-args)))))
+          ((merlin-eldoc--valid-fun-args-position-p (point))
+           (merlin-eldoc--gather-fun-args))
+          (t nil))))
 
 ;;;###autoload
 (defun merlin-eldoc-setup ()
