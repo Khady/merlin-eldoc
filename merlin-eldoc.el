@@ -46,6 +46,10 @@
   :group 'merlin
   :prefix "merlin-eldoc-")
 
+(defface merlin-eldoc-occurrences-face
+  '((t :inherit merlin-type-face))
+  "Face for highlighting occurrences.")
+
 (defcustom merlin-eldoc-type t
   "Enable display of type for the thing at point."
   :type 'boolean)
@@ -432,7 +436,7 @@ The value returned is one of:
     (merlin-eldoc--unhighlight-occurrences)
     (dolist (occ (merlin-eldoc--occurrences))
       (merlin-eldoc--highlight-occurrence
-       (merlin--make-bounds occ) 'merlin-type-face))))
+       (merlin--make-bounds occ) 'merlin-eldoc-occurrences-face))))
 
 (defun merlin-eldoc--on-overlay-p (id)
   "Return whether point is on a tide overlay of type ID."
