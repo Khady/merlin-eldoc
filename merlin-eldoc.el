@@ -173,7 +173,7 @@ This is done by comparing font face.  So a mode such as
 before to call this function."
   (merlin-eldoc--current-font-among-fonts-p pos '(font-lock-string-face)))
 
-(defun merlin-eldoc--is-keyword-p (pos)
+(defun merlin-eldoc--in-keyword-p (pos)
   "Return non-nil if character at POS is keyword.
 This is done by comparing font face.  So a mode such as
 `tuareg-mode' or `reason-mode' must be activated in the buffer
@@ -181,13 +181,22 @@ before to call this function."
   (merlin-eldoc--current-font-among-fonts-p pos '(tuareg-font-lock-governing-face
                                                   font-lock-keyword-face)))
 
+
+(defun merlin-eldoc--in-operator-p (pos)
+  "Return non-nil if character at POS is operator.
+This is done by comparing font face.  So a mode such as
+`tuareg-mode' or `reason-mode' must be activated in the buffer
+before to call this function."
+  (merlin-eldoc--current-font-among-fonts-p pos '(tuareg-font-lock-operator-face)))
+
 (defun merlin-eldoc--valid-type-position-p (pos)
   "Return non-nil if POS is in a place valid to get a type."
   (let ((symbol (thing-at-point 'symbol))
+        (operator (merlin-eldoc--in-operator-p pos))
         (string (merlin-eldoc--in-string-p pos))
         (comment (merlin-eldoc--in-comment-p pos))
-        (keyword (merlin-eldoc--is-keyword-p pos)))
-    (and (or symbol string)
+        (keyword (merlin-eldoc--in-keyword-p pos)))
+    (and (or symbol operator string)
          (not comment)
          (or (not keyword) string))))
 
