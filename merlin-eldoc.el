@@ -144,6 +144,14 @@ the documentation."
                 (const :tag "dedicate a single line to the doc" single)
                 (const :tag "fit the type and doc on one line" fit)))
 
+(defcustom merlin-eldoc-type-verbosity 'max
+  "How verbose the description of the type will be.
+Based on the merlin feature allowing to call
+`merlin-type-enclosing' multiple times on the same value and get
+a type with more and more details."
+  :type '(radio (const :tag "minimal")
+                (const :tag "maximal")))
+
 ;;; Utils
 
 ;; imported from evil-matchit
@@ -242,17 +250,21 @@ before to call this function."
            (errors (overlays-in beg end)))
       (cl-find-if #'merlin--overlay-pending-error errors))))
 
-(defun merlin-eldoc--count-lines (s)
-  "Count number of lines in string S."
-  (cl-count ?\n s))
-
-(defun merlin-eldoc--short-p (s max)
-  "Return non-nil if S contains less than MAX lines."
-  (<= (merlin-eldoc--count-lines s) max))
-
 (defun merlin-eldoc--wrap (text)
   "Trim all lines of TEXT and merge them in one line."
   (string-join (delete "" (split-string text)) " "))
+
+(defun merlin-eldoc--wrap-line (text &optional doc)
+  "Wrap TEXT to fit on a single line.
+If DOC is non-nil, take comment delimiters into account."
+  (let* ((com-len (+ (length comment-start) (length comment-end)))
+         (delimiters (if doc com-len 0))
+         (text (merlin-eldoc--wrap text))
+         (max-width (- (merlin-eldoc--minibuffer-width) delimiters))
+         (max-trunc (- max-width (length merlin-eldoc-truncate-marker))))
+    (if (> (length text) max-width)
+        (concat (substring text 0 max-trunc) merlin-eldoc-truncate-marker)
+      text)))
 
 (defun merlin-eldoc--split-line (line max-len)
   "Split LINE into a list of lines not larger than MAX-LEN.
@@ -269,7 +281,7 @@ should be used with text which is only on one line."
           (cons beginning (merlin-eldoc--split-line end max-len)))
       (list line))))
 
-(defun merlin-eldoc--lines-of-text (text &optional max-len)
+(defun merlin-eldoc--text-lines (text &optional max-len)
   "Return the list of all lines from TEXT.
 If a line is longer than MAX-LEN, it is turned into multiple
 lines.  If MAX-LEN is not provided, it is the width of the
@@ -278,6 +290,10 @@ minibuffer."
          (lines (delete "" (split-string text "[\r\n]+")))
          (lines (mapcar (lambda (l) (merlin-eldoc--split-line l max-len)) lines)))
     (apply #'append lines)))
+
+(defun merlin-eldoc--count-lines (text)
+  "Count number of line breaks in string TEXT."
+  (cl-count ?\n text))
 
 ;;; Main logic
 
@@ -316,22 +332,40 @@ minibuffer."
   (when (< merlin-eldoc-max-lines-function-arguments 1)
     (setq-local merlin-eldoc--max-lines-fun-args 1)))
 
-(defun merlin-eldoc--type ()
+(defun merlin-eldoc--raw-type (&optional no-reset-verbosity)
   "Return a string containing type of the symbol at point."
   (when merlin-eldoc-type
-    (setq merlin--verbosity-cache nil) ; reset verbosity to not display deeper types
+    ;; reset verbosity to not display deeper types
+    (unless no-reset-verbosity
+      (setq merlin--verbosity-cache nil))
     (if (region-active-p)
         (merlin--type-region)
       (merlin--type-enclosing-query)
       (when merlin-enclosing-types
-        (let ((data (elt merlin-enclosing-types merlin-enclosing-offset)))
-          (if (and (cddr data)
-                   (merlin-eldoc--short-p (merlin--type-enclosing-text data)
-                                          merlin-eldoc--max-lines))
-              (merlin--type-enclosing-text data)
-            (concat "(* type is too long, check buffer `"
-                    merlin-type-buffer-name
-                    "' or query the type manually *)")))))))
+        (let* ((data (elt merlin-enclosing-types merlin-enclosing-offset))
+               (type (merlin--type-enclosing-text data)))
+          (when (cddr data) type))))))
+
+(defun merlin-eldoc--format-type (type)
+  "Return formated TYPE."
+  (let ((type-lines (merlin-eldoc--text-lines type)))
+    (if (<= (length type-lines) merlin-eldoc--max-lines)
+        (string-join type-lines "\n")
+      (merlin-eldoc--wrap-line type))))
+
+(defun merlin-eldoc--type ()
+  "Return a string containing formated type."
+  (let* ((type (merlin-eldoc--raw-type)))
+    (merlin-eldoc--format-type type)))
+
+(defun merlin-eldoc--verbose-type ()
+  "Return a string containg formated verbose type."
+  (let ((previous-type nil)
+        (type (merlin-eldoc--raw-type t)))
+    (while (not (equal previous-type type))
+      (setq previous-type type)
+      (setq type (merlin-eldoc--raw-type t)))
+    (merlin-eldoc--format-type type)))
 
 (defun merlin-eldoc--raw-doc ()
   "Return a string containing raw documentation of the thing at point."
@@ -376,13 +410,7 @@ The value returned is one of:
 
 (defun merlin-eldoc--format-doc-single (doc)
   "Format DOC to fit on a single line."
-  (let* ((com-len (+ (length comment-start) (length comment-end)))
-         (doc (merlin-eldoc--wrap doc))
-         (max-width (- (merlin-eldoc--minibuffer-width) com-len))
-         (max-trunc (- max-width (length merlin-eldoc-truncate-marker))))
-    (if (> (length doc) max-width)
-        (concat (substring doc 0 max-trunc) merlin-eldoc-truncate-marker)
-      doc)))
+  (merlin-eldoc--wrap-line doc t))
 
 (defun merlin-eldoc--format-doc-fit-all (doc type-len)
   "Format DOC to fit with a type of length TYPE-LEN."
@@ -408,7 +436,7 @@ The value returned is one of:
 
 (defun merlin-eldoc--format-doc (doc &optional type)
   "Format DOC for display in echo area.  Adapt to TYPE if provided."
-  (let* ((doc-split (delete "" (merlin-eldoc--lines-of-text doc)))
+  (let* ((doc-split (delete "" (merlin-eldoc--text-lines doc)))
          (type-lines (if type (merlin-eldoc--count-lines type) 0))
          (shape (merlin-eldoc--shape type-lines))
          (doc (cond
@@ -425,7 +453,10 @@ The value returned is one of:
 
 (defun merlin-eldoc--gather-type-and-doc-info ()
   "Return a string with type and/or document of the thing at point."
-  (let* ((type (merlin-eldoc--type))
+  (let* ((type (cond ((equal 'min merlin-eldoc-type-verbosity)
+                      (merlin-eldoc--type))
+                     ((equal 'max merlin-eldoc-type-verbosity)
+                      (merlin-eldoc--verbose-type))))
          (doc (merlin-eldoc--raw-doc))
          (output (cond ((and type doc) (merlin-eldoc--format-doc doc type))
                        (type type)
@@ -514,7 +545,7 @@ The value returned is one of:
                          (expected-ty (format "(* expected type *) %s" expected-ty))
                          (t nil))))
       (when output
-        (let* ((lines (merlin-eldoc--lines-of-text output))
+        (let* ((lines (merlin-eldoc--text-lines output))
                (lines (length lines))
                (output (if (> lines merlin-eldoc--max-lines-fun-args)
                            (merlin-eldoc--format-args-single output)
