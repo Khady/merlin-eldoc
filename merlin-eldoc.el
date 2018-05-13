@@ -333,7 +333,9 @@ minibuffer."
     (setq-local merlin-eldoc--max-lines-fun-args 1)))
 
 (defun merlin-eldoc--raw-type (&optional no-reset-verbosity)
-  "Return a string containing type of the symbol at point."
+  "Return a string containing type of the symbol at point.
+Verbosity is reset unless NO-RESET-VERBOSITY is passed and
+non-nil."
   (when merlin-eldoc-type
     ;; reset verbosity to not display deeper types
     (unless no-reset-verbosity

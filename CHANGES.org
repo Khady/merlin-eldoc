@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file.
    - Provide hint of expected type and labels when applying a
      function.
    - Highlight occurrences of value at point.
+   - Add configuration for type verbosity (same as calling multiple
+     times ~merlin-type-enclosing~ on one value).
 
 ** 1.1 - [2018-05-02 Wed]
 
