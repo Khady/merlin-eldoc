@@ -358,7 +358,7 @@ non-nil."
 (defun merlin-eldoc--type ()
   "Return a string containing formated type."
   (let* ((type (merlin-eldoc--raw-type)))
-    (merlin-eldoc--format-type type)))
+    (when type (merlin-eldoc--format-type type))))
 
 (defun merlin-eldoc--verbose-type ()
   "Return a string containg formated verbose type."
