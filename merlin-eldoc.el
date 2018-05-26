@@ -7,7 +7,7 @@
 ;; Version: 1.2
 ;; Keywords: merlin ocaml languages eldoc
 ;; Homepage: https://github.com/khady/merlin-eldoc
-;; Package-Requires: ((emacs "24.4"))
+;; Package-Requires: ((emacs "24.4") (merlin "3.0"))
 
 ;; This file is not part of GNU Emacs.
 
