@@ -201,7 +201,24 @@ The main values are:
 - ~merlin-eldoc-max-lines~ to set on how many lines should fit the
   message printed in the minibuffer.
 
-* Configuration example
+* Configuration examples
+
+** use-package
+
+#+BEGIN_SRC emacs-lisp
+(use-package merlin-eldoc
+  :after merlin
+  :ensure t
+  :custom
+  (eldoc-echo-area-use-multiline-p t) ; use multiple lines when necessary
+  (merlin-eldoc-max-lines 8)          ; but not more than 8
+  (merlin-eldoc-type-verbosity 'min)  ; don't display verbose types
+  (merlin-eldoc-function-arguments nil) ; don't show function arguments
+  (merlin-eldoc-doc nil)                ; don't show the documentation
+  :hook ((tuareg-mode reason-mode) . merlin-eldoc-setup))
+#+END_SRC
+
+** Quelpa
 
 #+BEGIN_SRC emacs-lisp
 (quelpa '(merlin-eldoc :repo "Khady/merlin-eldoc" :fetcher github))
@@ -209,7 +226,7 @@ The main values are:
 ;; use multiple lines when necessary
 (setq eldoc-echo-area-use-multiline-p t)
 
-;; but no more than 10
+;; but not more than 10
 (setq merlin-eldoc-max-lines 10)
 
 ;; don't dedicate a line to the documentation
