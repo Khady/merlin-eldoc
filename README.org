@@ -1,5 +1,7 @@
 #+TITLE: Merlin backend for eldoc
 
+[[https://melpa.org/#/merlin-eldoc][file:https://melpa.org/packages/merlin-eldoc-badge.svg]]
+
 This package provides a merlin backend for eldoc. Its goal is to
 automatically (without using keybindings) display the type,
 documentation and occurrences of the value under point in OCaml and
@@ -121,53 +123,37 @@ let v = apply ~i:<-!->
 Two videos are played bellow for a more visual demonstration.
 
 * Installation
+** With ~use-package~
 
-For now the package is not published on melpa.
+Add this code to ~init.el~
+
+#+BEGIN_SRC emacs-lisp
+(use-package merlin-eldoc
+  :ensure t
+  :hook ((reason-mode tuareg-mode caml-mode) . merlin-eldoc-setup))
+#+END_SRC
 
 ** Quelpa
 
 With quelpa already installed and configured:
 
 #+BEGIN_SRC emacs-lisp
-(quelpa '(merlin-eldoc :repo "Khady/merlin-eldoc" :fetcher github))
+(quelpa '(merlin-eldoc :fetcher github :repo "Khady/merlin-eldoc"))
+;; Add a hook to start the mode automatically for OCaml and Reason
+(add-hook 'tuareg-mode-hook 'merlin-eldoc-setup)
+(add-hook 'reason-mode-hook 'merlin-eldoc-setup)
 #+END_SRC
-
-** With ~use-package~
-
-1. Clone this repository in ~$HOME/.emacs.d/vendor~
-
-   #+BEGIN_SRC bash
-mkdir -p "$HOME/.emacs.d/vendor"
-cd "$HOME/.emacs.d/vendor"
-git clone https://github.com/Khady/merlin-eldoc.git
-   #+END_SRC
-
-2. Add this code to ~init.el~
-
-   #+BEGIN_SRC emacs-lisp
-(use-package merlin-eldoc
-  :load-path "~/.emacs.d/vendor/merlin-eldoc/"
-  :hook ((reason-mode tuareg-mode caml-mode) . merlin-eldoc-setup))
-   #+END_SRC
 
 ** The more manual way
 
-1. Clone this repository in ~$HOME/.emacs.d/vendor~
+First the package has to be installed:
 
-   #+BEGIN_SRC bash
-mkdir -p "$HOME/.emacs.d/vendor"
-cd "$HOME/.emacs.d/vendor"
-git clone https://github.com/Khady/merlin-eldoc.git
-   #+END_SRC
+~M-x package-install RET merlin-eldoc RET~
 
-2. Add this code to ~init.el~
+Then this code should be added to ~init.el~
 
    #+BEGIN_SRC emacs-lisp
-;; Add the folder containing this package to the load-path
-(add-to-list 'load-path "~/.emacs.d/vendor/merlin-eldoc/")
-;; Require the package
 (require 'merlin-eldoc)
-;; Add a hook to start the mode automatically for OCaml and Reason
 (add-hook 'tuareg-mode-hook 'merlin-eldoc-setup)
 (add-hook 'reason-mode-hook 'merlin-eldoc-setup)
    #+END_SRC
