@@ -367,7 +367,7 @@ non-nil."
     (while (not (equal previous-type type))
       (setq previous-type type)
       (setq type (merlin-eldoc--raw-type t)))
-    (merlin-eldoc--format-type type)))
+    (when type (merlin-eldoc--format-type type))))
 
 (defun merlin-eldoc--raw-doc ()
   "Return a string containing raw documentation of the thing at point."
