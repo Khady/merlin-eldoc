@@ -4,29 +4,31 @@ All notable changes to this project will be documented in this file.
 
 ** Unreleased
 
-   - Add ~merlin-eldoc-jump-to-{prev,next}-occurrence~ functions.
+** 1.3 - [2018-08-09 Thu]
+
+- Fix bug when no type is available (@Wilfred #26)
+- Add ~merlin-eldoc-jump-to-{prev,next}-occurrence~ functions.
 
 ** 1.2 - [2018-05-14 Mon]
 
-   - Don't display anything when the point is in an area marked as an
-     error by merlin.
-   - Handle ~eldoc-echo-area-use-multiline-p~ and add new settings to
-     configure number of lines for type and doc.
-   - Provide hint of expected type and labels when applying a
-     function.
-   - Highlight occurrences of value at point.
-   - Add configuration for type verbosity (same as calling multiple
-     times ~merlin-type-enclosing~ on one value).
+- Don't display anything when the point is in an area marked as an
+  error by merlin.
+- Handle ~eldoc-echo-area-use-multiline-p~ and add new settings to
+  configure number of lines for type and doc.
+- Provide hint of expected type and labels when applying a function.
+- Highlight occurrences of value at point.
+- Add configuration for type verbosity (same as calling multiple times
+  ~merlin-type-enclosing~ on one value).
 
 ** 1.1 - [2018-05-02 Wed]
 
-   - Support reason comment syntax when showing documentation.
-   - Better display of documentation when it is wrapped in one line.
-   - Fix detection of valid position (handles spaces in strings, skip
-     comments and documentation).
-   - Filter documentation when it is an error message from merlin.
+- Support reason comment syntax when showing documentation.
+- Better display of documentation when it is wrapped in one line.
+- Fix detection of valid position (handles spaces in strings, skip
+  comments and documentation).
+- Filter documentation when it is an error message from merlin.
 
 ** 1.0 - [2018-05-01 Tue]
 
-   - Basic version working with ~eldoc-mode~.
-   - Provides type of symbol at point.
+- Basic version working with ~eldoc-mode~.
+- Provides type of symbol at point.
