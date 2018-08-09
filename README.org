@@ -223,6 +223,9 @@ They can be binded to keys for more convenient usage.
   (merlin-eldoc-type-verbosity 'min)  ; don't display verbose types
   (merlin-eldoc-function-arguments nil) ; don't show function arguments
   (merlin-eldoc-doc nil)                ; don't show the documentation
+  :bind (:map merlin-mode-map
+              ("C-c m p" . merlin-eldoc-jump-to-prev-occurrence)
+              ("C-c m n" . merlin-eldoc-jump-to-next-occurrence))
   :hook ((tuareg-mode reason-mode) . merlin-eldoc-setup))
 #+END_SRC
 
