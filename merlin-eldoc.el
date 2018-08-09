@@ -610,22 +610,26 @@ Occurrences and position are meant to be used by
   "Jump to prev occurrence of value at point."
   (interactive)
   (when merlin-eldoc--last-occurrence-index
-    (let* ((i merlin-eldoc--last-occurrence-index)
+    (let* ((len (length merlin-eldoc--last-occurrences))
+           (i merlin-eldoc--last-occurrence-index)
            (i (1- i))
-           (i (if (>= i 0) i (1- (length merlin-eldoc--last-occurrences))))
+           (i (if (>= i 0) i (1- len)))
            (bounds (aref merlin-eldoc--last-occurrences i)))
       (setq-local merlin-eldoc--last-occurrence-index i)
+      (message "jumping to occurrence %s/%s" (1+ i) len)
       (goto-char (car bounds)))))
 
 (defun merlin-eldoc-jump-to-next-occurrence ()
   "Jump to next occurrence of value at point."
   (interactive)
   (when merlin-eldoc--last-occurrence-index
-    (let* ((i merlin-eldoc--last-occurrence-index)
+    (let* ((len (length merlin-eldoc--last-occurrences))
+           (i merlin-eldoc--last-occurrence-index)
            (i (1+ i))
-           (i (if (< i (length merlin-eldoc--last-occurrences)) i 0))
+           (i (if (< i len) i 0))
            (bounds (aref merlin-eldoc--last-occurrences i)))
       (setq-local merlin-eldoc--last-occurrence-index i)
+      (message "jumping to occurrence %s/%s" (1+ i) len)
       (goto-char (car bounds)))))
 
 ;;;###autoload
