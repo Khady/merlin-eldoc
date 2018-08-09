@@ -201,6 +201,14 @@ The main values are:
 - ~merlin-eldoc-max-lines~ to set on how many lines should fit the
   message printed in the minibuffer.
 
+If highlighting of occurrences is enabled, two functions are povided
+to jump to the previous or next occurrence of value under the point:
+
+- ~merlin-eldoc-jump-to-prev-occurrence~
+- ~merlin-eldoc-jump-to-next-occurrence~
+
+They can be binded to keys for more convenient usage.
+
 * Configuration examples
 
 ** use-package
