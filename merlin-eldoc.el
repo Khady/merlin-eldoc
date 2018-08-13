@@ -149,8 +149,8 @@ the documentation."
 Based on the merlin feature allowing to call
 `merlin-type-enclosing' multiple times on the same value and get
 a type with more and more details."
-  :type '(radio (const :tag "minimal")
-                (const :tag "maximal")))
+  :type '(radio (const :tag "minimal" min)
+                (const :tag "maximal" max)))
 
 ;;; Utils
 
@@ -388,7 +388,8 @@ The value returned is one of:
          (doc-type (cond ((integerp merlin-eldoc--max-lines-doc) 'multi)
                          (t merlin-eldoc--max-lines-doc))))
     (cond ((or (not eldoc-echo-area-use-multiline-p)
-               (equal merlin-eldoc--max-lines-doc 'fit)) 'fit)
+               (equal merlin-eldoc--max-lines-doc 'fit))
+           'fit)
           ((> type-lines 1)
            (cond ((equal merlin-eldoc--max-lines-doc 'fit) 'fit)
                  ((= doc-max-lines 0) 'fit)
