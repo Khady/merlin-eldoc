@@ -536,11 +536,15 @@ Occurrences and position are meant to be used by
 (defun merlin-eldoc--hl-identifiers-post-command-hook ()
   "Unhighlight if point moves off identifier."
   (unless (merlin-eldoc--on-overlay-p 'occurrences)
-    (merlin-eldoc--unhighlight-occurrences)))
+    (merlin-eldoc--unhighlight-occurrences)
+    (setq-local merlin-eldoc--last-occurrences nil)
+    (setq-local merlin-eldoc--last-occurrence-index nil)))
 
 (defun merlin-eldoc--hl-identifiers-before-change-function (_beg _end)
   "Unhighlight any time the buffer changes."
-  (merlin-eldoc--unhighlight-occurrences))
+  (merlin-eldoc--unhighlight-occurrences)
+  (setq-local merlin-eldoc--last-occurrences nil)
+  (setq-local merlin-eldoc--last-occurrence-index nil))
 
 (defun merlin-eldoc--format-args-single (text)
   "Format TEXT content into a string fitting on a single line."
