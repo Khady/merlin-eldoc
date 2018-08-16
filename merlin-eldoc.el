@@ -189,7 +189,6 @@ before to call this function."
   (merlin-eldoc--current-font-among-fonts-p pos '(tuareg-font-lock-governing-face
                                                   font-lock-keyword-face)))
 
-
 (defun merlin-eldoc--in-operator-p (pos)
   "Return non-nil if character at POS is operator.
 This is done by comparing font face.  So a mode such as
