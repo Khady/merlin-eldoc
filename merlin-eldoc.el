@@ -604,7 +604,7 @@ Occurrences and position are meant to be used by
                        (merlin-eldoc--merlin-error-at-point-p))))
     (merlin-eldoc--adjust-max-len)
     (cond ((merlin-eldoc--valid-type-position-p (point))
-           (merlin-eldoc--highlight-occurrences)
+           (ignore-errors (merlin-eldoc--highlight-occurrences))
            (merlin-eldoc--gather-type-and-doc-info))
           ((merlin-eldoc--valid-fun-args-position-p (point))
            (merlin-eldoc--gather-fun-args))
