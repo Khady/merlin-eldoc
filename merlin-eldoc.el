@@ -503,7 +503,7 @@ Occurrences and position are meant to be used by
 (defun merlin-eldoc--occurrences ()
   "Produce list of BOUNDS (of the form (START . END)) of occurrences of the symbol at point."
   (merlin/call "occurrences"
-               "-identifier-at" (merlin/unmake-point (point))))
+               "-identifier-at" (merlin/unmake-point)))
 
 (defun merlin-eldoc--highlight-occurrence (bounds face)
   "Create an overlay on BOUNDS (of the form (START . END)) and give FACE."
@@ -566,7 +566,7 @@ Occurrences and position are meant to be used by
   (interactive)
   (when merlin-eldoc-function-arguments
     (let* ((data (merlin/call "complete-prefix"
-                              "-position" (merlin/unmake-point (point))
+                              "-position" (merlin/unmake-point)
                               "-prefix" ""
                               "-doc" "n"))
            (context (cdr (assoc 'context data)))
