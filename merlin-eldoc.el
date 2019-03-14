@@ -527,7 +527,7 @@ Occurrences and position are meant to be used by
       (merlin-eldoc--store-occurrences bounds))))
 
 (defun merlin-eldoc--on-overlay-p (id)
-  "Return whether point is on a tide overlay of type ID."
+  "Return whether point is on a merlin-eldoc overlay of type ID."
   (cl-find-if (lambda (el)
                 (eq (overlay-get el 'merlin-eldoc) id))
               (overlays-at (point))))
